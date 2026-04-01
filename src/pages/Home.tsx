@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogoImage } from "../components/ui/LogoImage";
+import { ScrollingGallery } from "../components/ui/ScrollingGallery";
 
 import { HospitalName } from "../components/ui/HospitalName";
 
@@ -278,6 +279,9 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      {/* Scrolling Gallery */}
+      <ScrollingGallery />
 
       {/* Departments Grid */}
       <section className="py-24 bg-gray-50">
