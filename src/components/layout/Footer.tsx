@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, Mail, MapPin, Clock, ShieldCheck } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, ShieldCheck, Facebook } from "lucide-react";
 import { LogoImage } from "../ui/LogoImage";
 
 const Logo = () => (
@@ -52,10 +52,19 @@ export function Footer() {
               Providing appropriate, optimum and quality health care services to
               the patients from all sections and strata of our society.
             </p>
-            <div className="flex items-center space-x-4 text-gray-300">
+            <div className="flex items-center space-x-4 text-gray-300 mb-6">
               <Clock className="h-5 w-5 text-orange-500" />
               <span>24/7 Emergency Services</span>
             </div>
+            <a 
+              href="https://www.facebook.com/Gajananhospitalccu" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex items-center space-x-2 text-white bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors shadow-sm"
+            >
+              <Facebook className="h-5 w-5" />
+              <span className="font-medium">Follow Us on Facebook</span>
+            </a>
           </div>
 
           {/* Quick Links */}

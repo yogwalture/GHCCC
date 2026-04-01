@@ -1,7 +1,6 @@
 import { Target, Eye, Users, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { HospitalName } from "../components/ui/HospitalName";
-import { ScrollingGallery } from "../components/ui/ScrollingGallery";
 
 export function About() {
   return (
@@ -79,9 +78,6 @@ export function About() {
           </div>
         </div>
       </div>
-
-      {/* Gallery Section */}
-      <ScrollingGallery />
     </div>
   );
 }

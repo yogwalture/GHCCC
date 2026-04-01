@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { 
   Activity, 
   Heart, 
@@ -19,6 +20,16 @@ import {
 } from "lucide-react";
 
 export function Departments() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate data fetching
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   const departments = [
     { 
       name: "General Medicine", 
@@ -299,6 +310,69 @@ export function Departments() {
     "24 hours Expert Doctor available",
     "A.C. Room facility",
   ];
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-16">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-16">
+            <div className="h-12 w-3/4 max-w-2xl bg-gray-200 animate-pulse rounded mx-auto mb-6"></div>
+            <div className="h-6 w-2/3 max-w-xl bg-gray-200 animate-pulse rounded mx-auto"></div>
+          </div>
+
+          {/* Departments Grid Skeleton */}
+          <div className="mb-24">
+            <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mx-auto mb-10"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 flex flex-col h-full">
+                  <div className="p-6 border-b border-gray-50 flex items-center space-x-4">
+                    <div className="h-12 w-12 bg-gray-200 animate-pulse rounded-lg shrink-0"></div>
+                    <div className="h-6 w-3/4 bg-gray-200 animate-pulse rounded"></div>
+                  </div>
+                  <div className="p-6 flex-grow flex flex-col space-y-6">
+                    <div className="space-y-2">
+                      <div className="h-4 w-full bg-gray-200 animate-pulse rounded"></div>
+                      <div className="h-4 w-5/6 bg-gray-200 animate-pulse rounded"></div>
+                    </div>
+                    <div>
+                      <div className="h-4 w-32 bg-gray-200 animate-pulse rounded mb-3"></div>
+                      <div className="space-y-2">
+                        {[1, 2, 3].map(j => <div key={j} className="h-3 w-full bg-gray-200 animate-pulse rounded"></div>)}
+                      </div>
+                    </div>
+                    <div className="mt-auto pt-4 border-t border-gray-100 flex items-start space-x-3">
+                      <div className="h-8 w-8 bg-gray-200 animate-pulse rounded-full shrink-0"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 w-24 bg-gray-200 animate-pulse rounded"></div>
+                        <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Facilities Skeleton */}
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-gray-200">
+            <div className="text-center mb-12">
+              <div className="h-8 w-64 bg-gray-200 animate-pulse rounded mx-auto mb-4"></div>
+              <div className="h-4 w-96 bg-gray-200 animate-pulse rounded mx-auto"></div>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-8">
+              {Array.from({ length: 15 }).map((_, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="h-6 w-6 bg-gray-200 animate-pulse rounded-full shrink-0"></div>
+                  <div className="h-4 w-full bg-gray-200 animate-pulse rounded mt-1"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen py-16">

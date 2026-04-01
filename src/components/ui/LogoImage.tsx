@@ -29,7 +29,6 @@ export function LogoImage({ src, alt, className = "", fallbackText, bgColor = "b
       className={className} 
       onError={() => setError(true)}
       referrerPolicy="no-referrer"
-      crossOrigin="anonymous"
       loading="lazy"
     />
   );

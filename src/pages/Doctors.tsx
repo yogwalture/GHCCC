@@ -1,6 +1,17 @@
+import { useState, useEffect } from "react";
 import { User, Award, Clock, MapPin } from "lucide-react";
 
 export function Doctors() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate data fetching
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   const directors = [
     { 
       name: "Dr. Sachin Suryawanshi", 
@@ -87,6 +98,77 @@ export function Doctors() {
     acc[doctor.specialty].push(doctor);
     return acc;
   }, {} as Record<string, typeof consultantsList>);
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-16">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-16">
+            <div className="h-10 w-64 bg-gray-200 animate-pulse rounded mx-auto mb-6"></div>
+            <div className="h-6 w-3/4 max-w-3xl bg-gray-200 animate-pulse rounded mx-auto"></div>
+          </div>
+
+          {/* Directors Skeleton */}
+          <div className="mb-24">
+            <div className="flex items-center justify-center space-x-4 mb-12">
+              <div className="h-1 w-12 bg-gray-200 animate-pulse rounded-full"></div>
+              <div className="h-8 w-48 bg-gray-200 animate-pulse rounded"></div>
+              <div className="h-1 w-12 bg-gray-200 animate-pulse rounded-full"></div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col md:flex-row">
+                  <div className="md:w-1/3 bg-gray-200 animate-pulse p-8 min-h-[200px]"></div>
+                  <div className="md:w-2/3 p-8">
+                    <div className="h-6 w-24 bg-gray-200 animate-pulse rounded-full mb-4"></div>
+                    <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-4"></div>
+                    <div className="h-4 w-64 bg-gray-200 animate-pulse rounded mb-6"></div>
+                    <div className="space-y-2 mb-6">
+                      <div className="h-4 w-full bg-gray-200 animate-pulse rounded"></div>
+                      <div className="h-4 w-5/6 bg-gray-200 animate-pulse rounded"></div>
+                    </div>
+                    <div className="space-y-3 border-t border-gray-100 pt-6">
+                      <div className="h-4 w-full bg-gray-200 animate-pulse rounded"></div>
+                      <div className="h-4 w-3/4 bg-gray-200 animate-pulse rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Consultants Skeleton */}
+          <div>
+            <div className="flex items-center justify-center space-x-4 mb-12">
+              <div className="h-1 w-12 bg-gray-200 animate-pulse rounded-full"></div>
+              <div className="h-8 w-64 bg-gray-200 animate-pulse rounded"></div>
+              <div className="h-1 w-12 bg-gray-200 animate-pulse rounded-full"></div>
+            </div>
+
+            <div className="space-y-12">
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-white rounded-2xl shadow-md p-8 border-l-8 border-gray-200">
+                  <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-8"></div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[1, 2, 3, 4, 5, 6].map((j) => (
+                      <div key={j} className="flex items-start space-x-4 p-5 rounded-xl bg-gray-50 border border-gray-100">
+                        <div className="h-10 w-10 bg-gray-200 animate-pulse rounded-full shrink-0"></div>
+                        <div className="flex-1">
+                          <div className="h-5 w-3/4 bg-gray-200 animate-pulse rounded mb-2"></div>
+                          <div className="h-3 w-full bg-gray-200 animate-pulse rounded"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen py-16">

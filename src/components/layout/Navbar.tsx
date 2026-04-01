@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Phone, MapPin, Clock, Menu, X, MessageCircle } from "lucide-react";
+import { Phone, MapPin, Clock, Menu, X, MessageCircle, Facebook } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -66,9 +66,20 @@ export function Navbar() {
               <span>24/7 Emergency Services</span>
             </div>
           </div>
-          <div className="flex items-center space-x-1 md:space-x-2 text-center opacity-90">
-            <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
-            <span>Garkheda & Bajajnagar</span>
+          <div className="flex items-center space-x-4 text-center opacity-90">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+              <span>Garkheda & Bajajnagar</span>
+            </div>
+            <a 
+              href="https://www.facebook.com/Gajananhospitalccu" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center space-x-1 bg-blue-800 hover:bg-blue-700 px-2 py-1 rounded transition-colors"
+            >
+              <Facebook className="h-3 w-3 md:h-4 md:w-4" />
+              <span className="font-bold hidden sm:inline">Follow Us</span>
+            </a>
           </div>
         </div>
       </div>
