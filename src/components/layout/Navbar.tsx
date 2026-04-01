@@ -95,15 +95,13 @@ export function Navbar() {
                 {link.name}
               </Link>
             ))}
-            <a
-              href="https://wa.me/qr/4VVVV63VTXY3M1"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/book-appointment"
               className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-2.5 rounded-md font-bold transition-colors flex items-center shadow-md shadow-[#25D366]/20"
             >
               <MessageCircle className="mr-2 h-5 w-5" />
               Book Appointment
-            </a>
+            </Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -133,16 +131,14 @@ export function Navbar() {
                 {link.name}
               </Link>
             ))}
-            <a
-              href="https://wa.me/qr/4VVVV63VTXY3M1"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/book-appointment"
               className="bg-[#25D366] text-white text-center px-6 py-3 rounded-md font-bold flex items-center justify-center shadow-md"
               onClick={() => setIsOpen(false)}
             >
               <MessageCircle className="mr-2 h-5 w-5" />
               Book Appointment
-            </a>
+            </Link>
           </div>
         </div>
       )}

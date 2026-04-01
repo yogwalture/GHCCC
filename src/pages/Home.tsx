@@ -118,16 +118,14 @@ export function Home() {
               <HospitalName className="text-white" /> provides world-class medical services with state-of-the-art technology and a patient-first approach.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-5 w-full sm:w-auto">
-              <a
-                href="https://wa.me/qr/4VVVV63VTXY3M1"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/book-appointment"
                 className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-10 py-5 rounded-xl font-bold text-lg transition-all shadow-xl shadow-[#25D366]/20 flex items-center justify-center group"
               >
                 <MessageCircle className="mr-3 h-6 w-6" />
                 Book Appointment
                 <ArrowRight className="ml-2 h-5 w-5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-              </a>
+              </Link>
               <a
                 href="tel:8329573283"
                 className="bg-white/10 backdrop-blur-md hover:bg-white/20 text-white px-10 py-5 rounded-xl font-bold text-lg transition-all border border-white/20 flex items-center justify-center"
