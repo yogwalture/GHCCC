@@ -58,6 +58,42 @@ export function Home() {
     { name: "Oncology", icon: Syringe, desc: "Comprehensive cancer care and chemotherapy." },
   ];
 
+  const facilities = [
+    "Well-equipped Air-conditioned Intensive Care Unit (ICU)",
+    "Isolation ICU",
+    "Poisoning & Snake bite diagnosis and treatment",
+    "Diabetes diagnosis and treatment",
+    "Heart disease diagnosis and treatment",
+    "Lung disease diagnosis and treatment",
+    "Cancer diagnosis and treatment",
+    "Brain disease diagnosis and treatment",
+    "Skin disease & Laser",
+    "Well-equipped Dialysis Department",
+    "Kidney disease & treatment",
+    "Sonography & Color Doppler",
+    "Endoscopy Department",
+    "Bronchoscopy",
+    "Laser therapy (for varicose veins)",
+    "24 hours Ambulance service available",
+    "Orthopedic diagnosis & treatment",
+    "Accident & Trauma care",
+    "Joint Replacement",
+    "Joint & Spine Surgery",
+    "Arthroscopy",
+    "Maxillofacial & Dental Surgery",
+    "Face, Mouth & Jaw diagnosis and treatment",
+    "Neuro Surgery",
+    "Cancer Surgery & Chemotherapy",
+    "Plastic Surgery",
+    "General Laparoscopic Surgery",
+    "2D Echo Cardiography",
+    "Digital X-Ray",
+    "Physiotherapy & Treatment",
+    "24 hours Pathology Lab & Pharmacy",
+    "24 hours Expert Doctor available",
+    "A.C. Room facility",
+  ];
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -323,8 +359,30 @@ export function Home() {
         </div>
       </section>
 
+      {/* Facilities List */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-blue-900">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Available Facilities</h2>
+              <p className="text-gray-600">State-of-the-art infrastructure and round-the-clock services.</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-8">
+              {facilities.map((facility, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="bg-orange-100 p-1.5 rounded-full shrink-0 mt-0.5">
+                    <ShieldCheck className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <span className="text-gray-700 font-medium leading-snug">{facility}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials */}
-      <section className="py-24 bg-white overflow-hidden relative">
+      <section className="py-24 bg-gray-50 overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gray-100 to-transparent"></div>
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center max-w-3xl mx-auto mb-20">
