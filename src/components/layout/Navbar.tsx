@@ -48,6 +48,7 @@ export function Navbar() {
     { name: "About Us", path: "/about" },
     { name: "Departments", path: "/departments" },
     { name: "Doctors", path: "/doctors" },
+    { name: "Insurances", path: "/insurances" },
     { name: "Contact", path: "/contact" },
   ];
 

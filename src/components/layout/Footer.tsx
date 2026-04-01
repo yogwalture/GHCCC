@@ -94,6 +94,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/insurances" className="text-gray-300 hover:text-orange-500 transition-colors">
+                  Empanelled Insurances
+                </Link>
+              </li>
+              <li>
                 <Link to="/contact" className="text-gray-300 hover:text-orange-500 transition-colors">
                   Contact Us
                 </Link>

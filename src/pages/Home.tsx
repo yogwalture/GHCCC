@@ -265,6 +265,19 @@ export function Home() {
                     </div>
                   </div>
                 </Link>
+
+                {/* Insurances Card */}
+                <Link to="/insurances" className="group">
+                  <div className="bg-white p-6 rounded-3xl shadow-xl border-2 border-transparent hover:border-green-600 transition-all flex items-center space-x-6">
+                    <div className="bg-green-50 p-4 rounded-2xl group-hover:bg-green-600 transition-colors shrink-0">
+                      <ShieldCheck className="h-16 w-16 text-green-600 group-hover:text-white transition-colors p-1" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-green-700 transition-colors">Private Insurances & TPA</h3>
+                      <p className="text-sm text-gray-500 font-medium leading-relaxed">Cashless facility available for major private health insurances and TPAs.</p>
+                    </div>
+                  </div>
+                </Link>
               </div>
             </motion.div>
             
@@ -286,20 +299,20 @@ export function Home() {
               
               <div className="grid sm:grid-cols-2 gap-6 mb-12">
                 {[
-                  { title: "NABH Accredited", desc: "Highest quality standards", icon: ShieldCheck },
-                  { title: "MJPJAY Empanelled", desc: "Cashless Govt. Scheme", icon: Award },
-                  { title: "AB-PMJAY (Ayushman)", desc: "₹5 Lakh Health Cover", icon: Heart },
-                  { title: "Cashless Facility", desc: "Major insurance support", icon: Activity },
+                  { title: "NABH Accredited", desc: "Highest quality standards", icon: ShieldCheck, link: "/nabh" },
+                  { title: "MJPJAY Empanelled", desc: "Cashless Govt. Scheme", icon: Award, link: "/mjpjay" },
+                  { title: "AB-PMJAY (Ayushman)", desc: "₹5 Lakh Health Cover", icon: Heart, link: "/ab-pmjay" },
+                  { title: "Cashless Facility", desc: "Major insurance support", icon: Activity, link: "/insurances" },
                 ].map((item, index) => (
-                  <div key={index} className="flex items-start space-x-4">
-                    <div className="bg-blue-50 p-2 rounded-lg shrink-0">
+                  <Link to={item.link} key={index} className="flex items-start space-x-4 group hover:bg-gray-50 p-2 rounded-xl transition-colors">
+                    <div className="bg-blue-50 p-2 rounded-lg shrink-0 group-hover:bg-blue-100 transition-colors">
                       <item.icon className="h-5 w-5 text-blue-900" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900">{item.title}</h4>
+                      <h4 className="font-bold text-gray-900 group-hover:text-blue-900 transition-colors">{item.title}</h4>
                       <p className="text-sm text-gray-500 font-medium">{item.desc}</p>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               
@@ -365,7 +378,12 @@ export function Home() {
           <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-blue-900">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Available Facilities</h2>
-              <p className="text-gray-600">State-of-the-art infrastructure and round-the-clock services.</p>
+              <p className="text-gray-600 mb-6">State-of-the-art infrastructure and round-the-clock services.</p>
+              <Link to="/insurances" className="inline-flex items-center space-x-2 text-blue-900 font-bold hover:text-blue-700 transition-colors bg-blue-50 px-6 py-3 rounded-full">
+                <ShieldCheck className="h-5 w-5" />
+                <span>View Empanelled Insurances & TPA</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-8">
               {facilities.map((facility, index) => (

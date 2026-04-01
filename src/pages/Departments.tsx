@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { 
   Activity, 
   Heart, 
@@ -16,7 +17,8 @@ import {
   Scan, 
   Sparkles, 
   Smile, 
-  Video 
+  Video,
+  ArrowRight
 } from "lucide-react";
 
 export function Departments() {
@@ -456,7 +458,12 @@ export function Departments() {
         <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border-t-8 border-blue-900">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Available Facilities</h2>
-            <p className="text-gray-600">State-of-the-art infrastructure and round-the-clock services.</p>
+            <p className="text-gray-600 mb-6">State-of-the-art infrastructure and round-the-clock services.</p>
+            <Link to="/insurances" className="inline-flex items-center space-x-2 text-blue-900 font-bold hover:text-blue-700 transition-colors bg-blue-50 px-6 py-3 rounded-full">
+              <ShieldCheck className="h-5 w-5" />
+              <span>View Empanelled Insurances & TPA</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-8">
             {facilities.map((facility, index) => (

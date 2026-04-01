@@ -14,6 +14,7 @@ import { BookAppointment } from "./pages/BookAppointment";
 import { NABH } from "./pages/NABH";
 import { MJPJAY } from "./pages/MJPJAY";
 import { ABPMJAY } from "./pages/ABPMJAY";
+import Insurances from "./pages/Insurances";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="nabh" element={<NABH />} />
           <Route path="mjpjay" element={<MJPJAY />} />
           <Route path="ab-pmjay" element={<ABPMJAY />} />
+          <Route path="insurances" element={<Insurances />} />
         </Route>
       </Routes>
     </Router>
