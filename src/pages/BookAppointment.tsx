@@ -29,7 +29,7 @@ export function BookAppointment() {
     const encodedMessage = encodeURIComponent(message);
     
     // Redirect to WhatsApp
-    window.open(`https://wa.me/qr/4VVVV63VTXY3M1?text=${encodedMessage}`, "_blank");
+    window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encodedMessage}`, "_blank");
     
     // Show confirmation state
     setIsSent(true);

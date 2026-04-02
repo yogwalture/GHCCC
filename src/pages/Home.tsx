@@ -118,7 +118,7 @@ export function Home() {
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <Link to="/nabh" className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:bg-white/20 transition-all">
                 <LogoImage 
-                  src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/NABH_logo.png/220px-NABH_logo.png" 
+                  src="/images/nabh.png" 
                   alt="NABH" 
                   className="h-6 w-auto brightness-110 bg-white p-0.5 rounded" 
                   fallbackText="NABH"
@@ -127,7 +127,7 @@ export function Home() {
               </Link>
               <Link to="/ab-pmjay" className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:bg-white/20 transition-all">
                 <LogoImage 
-                  src="https://upload.wikimedia.org/wikipedia/en/thumb/5/51/Ayushman_Bharat_logo.svg/512px-Ayushman_Bharat_logo.svg.png" 
+                  src="/images/abpmjay.png" 
                   alt="ABPMJAY" 
                   className="h-6 w-auto brightness-110" 
                   fallbackText="PMJAY"
@@ -136,7 +136,7 @@ export function Home() {
               </Link>
               <Link to="/mjpjay" className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:bg-white/20 transition-all">
                 <LogoImage 
-                  src="https://hospitals.pmjay.gov.in/Search/images/mjpjay_logo.png" 
+                  src="/images/mjpjay.svg" 
                   alt="MJPJAY" 
                   className="h-6 w-auto brightness-110 bg-white p-0.5 rounded" 
                   fallbackText="MJPJAY"
@@ -217,7 +217,7 @@ export function Home() {
                   <div className="bg-white p-6 rounded-3xl shadow-xl border-2 border-transparent hover:border-blue-900 transition-all flex items-center space-x-6">
                     <div className="bg-blue-50 p-4 rounded-2xl group-hover:bg-blue-900 transition-colors shrink-0">
                       <LogoImage 
-                        src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/NABH_logo.png/220px-NABH_logo.png" 
+                        src="/images/nabh.png" 
                         alt="NABH" 
                         className="h-16 w-auto group-hover:scale-110 transition-transform bg-white p-1 rounded-lg" 
                         fallbackText="NABH"
@@ -235,7 +235,7 @@ export function Home() {
                   <div className="bg-white p-6 rounded-3xl shadow-xl border-2 border-transparent hover:border-orange-500 transition-all flex items-center space-x-6">
                     <div className="bg-orange-50 p-4 rounded-2xl group-hover:bg-orange-500 transition-colors shrink-0">
                       <LogoImage 
-                        src="https://hospitals.pmjay.gov.in/Search/images/mjpjay_logo.png" 
+                        src="/images/mjpjay.svg" 
                         alt="MJPJAY" 
                         className="h-16 w-auto group-hover:scale-110 transition-transform bg-white p-1 rounded-lg" 
                         fallbackText="MJPJAY"
@@ -253,7 +253,7 @@ export function Home() {
                   <div className="bg-white p-6 rounded-3xl shadow-xl border-2 border-transparent hover:border-blue-600 transition-all flex items-center space-x-6">
                     <div className="bg-blue-50 p-4 rounded-2xl group-hover:bg-blue-600 transition-colors shrink-0">
                       <LogoImage 
-                        src="https://upload.wikimedia.org/wikipedia/en/thumb/5/51/Ayushman_Bharat_logo.svg/512px-Ayushman_Bharat_logo.svg.png" 
+                        src="/images/abpmjay.png" 
                         alt="AB-PMJAY" 
                         className="h-16 w-auto group-hover:scale-110 transition-transform" 
                         fallbackText="PMJAY"

@@ -14,7 +14,7 @@ export function MJPJAY() {
         >
           <div className="bg-orange-600 p-12 text-center text-white">
             <LogoImage 
-              src="https://hospitals.pmjay.gov.in/Search/images/mjpjay_logo.png" 
+              src="/images/mjpjay.svg" 
               alt="MJPJAY Logo" 
               className="h-40 mx-auto mb-8 bg-white p-2 rounded-full shadow-lg"
               fallbackText="MJPJAY"

@@ -14,7 +14,7 @@ export function ABPMJAY() {
         >
           <div className="bg-blue-600 p-12 text-center text-white">
             <LogoImage 
-              src="https://upload.wikimedia.org/wikipedia/en/thumb/5/51/Ayushman_Bharat_logo.svg/512px-Ayushman_Bharat_logo.svg.png" 
+              src="/images/abpmjay.png" 
               alt="AB-PMJAY Logo" 
               className="h-40 mx-auto mb-8 bg-white p-2 rounded-full shadow-lg"
               fallbackText="PMJAY"

@@ -164,7 +164,7 @@ export function Footer() {
           <div className="flex flex-wrap justify-center md:justify-end gap-6 text-sm text-gray-400">
             <Link to="/nabh" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <LogoImage 
-                src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/NABH_logo.png/220px-NABH_logo.png" 
+                src="/images/nabh.png" 
                 alt="NABH" 
                 className="h-8 w-auto bg-white p-0.5 rounded" 
                 fallbackText="NABH"
@@ -173,7 +173,7 @@ export function Footer() {
             </Link>
             <Link to="/mjpjay" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <LogoImage 
-                src="https://hospitals.pmjay.gov.in/Search/images/mjpjay_logo.png" 
+                src="/images/mjpjay.svg" 
                 alt="MJPJAY" 
                 className="h-8 w-auto bg-white p-0.5 rounded-full" 
                 fallbackText="MJPJAY"
@@ -182,7 +182,7 @@ export function Footer() {
             </Link>
             <Link to="/ab-pmjay" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <LogoImage 
-                src="https://upload.wikimedia.org/wikipedia/en/thumb/5/51/Ayushman_Bharat_logo.svg/512px-Ayushman_Bharat_logo.svg.png" 
+                src="/images/abpmjay.png" 
                 alt="AB-PMJAY" 
                 className="h-8 w-auto bg-white p-0.5 rounded-full" 
                 fallbackText="PMJAY"

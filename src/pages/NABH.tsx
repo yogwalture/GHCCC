@@ -14,7 +14,7 @@ export function NABH() {
         >
           <div className="bg-blue-900 p-12 text-center text-white">
             <LogoImage 
-              src="https://upload.wikimedia.org/wikipedia/en/thumb/8/8e/NABH_logo.png/220px-NABH_logo.png" 
+              src="/images/nabh.png" 
               alt="NABH Logo" 
               className="h-40 mx-auto mb-8 bg-white p-2 rounded-2xl shadow-lg"
               fallbackText="NABH"
