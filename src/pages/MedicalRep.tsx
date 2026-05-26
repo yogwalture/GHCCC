@@ -197,6 +197,9 @@ export function MedicalRep() {
 
   const isDateMatchingDoctor = (dateObj: Date, callDay: string): boolean => {
     const dayName = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+    // On Tuesdays, MR can book any doctor (up to 15 doctors rostered)
+    if (dayName === "Tuesday") return true;
+
     if (callDay === "Tuesday" && dayName === "Tuesday") return true;
     if (callDay === "Friday" && dayName === "Friday") return true;
     if (callDay === "1st Thursday") {
@@ -237,7 +240,8 @@ export function MedicalRep() {
 
         // Precision time calculations
         const now = new Date();
-        const callTimeParts = getCallStartTime(docObj.timeSlot);
+        const isTuesday = temp.getDay() === 2; // Tuesday is 2
+        const callTimeParts = isTuesday ? { hour: 14, minute: 0 } : getCallStartTime(docObj.timeSlot);
         
         const callStartTime = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate(), callTimeParts.hour, callTimeParts.minute, 0, 0);
         
@@ -257,7 +261,7 @@ export function MedicalRep() {
           day: "numeric"
         }) + " at 8:00 AM";
 
-        const callTimeReadable = callStartTime.toLocaleTimeString("en-US", {
+        const callTimeReadable = isTuesday ? "2:00 PM" : callStartTime.toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit"
         });
@@ -277,13 +281,26 @@ export function MedicalRep() {
   };
 
   useEffect(() => {
-    if (mrDoctor) {
+    if (mrDate) {
+      if (mrDate.startsWith("Tue")) {
+        setMrTimeSlot("02:00 PM - 03:00 PM");
+      } else if (mrDoctor) {
+        const docObj = mrDoctors.find(d => d.id === mrDoctor);
+        if (docObj) {
+          setMrTimeSlot(docObj.timeSlot);
+        }
+      }
+    } else if (mrDoctor) {
       const docObj = mrDoctors.find(d => d.id === mrDoctor);
       if (docObj) {
         setMrTimeSlot(docObj.timeSlot);
       }
-      setMrDate(""); // Reset selected date when doctor changes
     }
+  }, [mrDate, mrDoctor]);
+
+  useEffect(() => {
+    // Only trigger mrDate reset when doctor selection changes directly
+    setMrDate("");
   }, [mrDoctor]);
 
   const defaultMrBookings: any[] = [];
@@ -314,7 +331,7 @@ export function MedicalRep() {
     e.preventDefault();
     setBookingError("");
 
-    if (mrBookings.length >= 25) {
+    if (mrBookings.length >= 15) {
       setBookingError("Booking capacity full! Clear slots or wait for next cycle.");
       return;
     }
@@ -517,7 +534,7 @@ export function MedicalRep() {
               Medical Representatives Portal
             </h1>
             <p className="text-sm text-gray-600 mt-2 font-medium leading-relaxed">
-              We highly value scientific interaction with pharmaceutical and surgical experts. Please reserve one of our 25 daily available slots to present new formulations, clinical studies, or healthcare technologies to our core medical directors.
+              We highly value scientific interaction with pharmaceutical and surgical experts. Please reserve one of our 15 daily available slots to present new formulations, clinical studies, or healthcare technologies to our core medical directors.
             </p>
           </div>
         </div>
@@ -537,31 +554,31 @@ export function MedicalRep() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Roster Load</span>
-                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${mrBookings.length >= 25 ? 'bg-red-50 text-red-700' : 'bg-teal-50 text-teal-800'}`}>
-                    {Math.max(0, 25 - mrBookings.length)} Slots Available
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${mrBookings.length >= 15 ? 'bg-red-50 text-red-700' : 'bg-teal-50 text-teal-800'}`}>
+                    {Math.max(0, 15 - mrBookings.length)} Slots Available
                   </span>
                 </div>
 
                 <div className="text-3xl font-black text-gray-900 mb-1">
-                  {mrBookings.length} <span className="text-sm font-bold text-gray-400">/ 25 daily slots booked</span>
+                  {mrBookings.length} <span className="text-sm font-bold text-gray-400">/ 15 daily slots booked</span>
                 </div>
 
                 {/* Progress bar */}
                 <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden mb-4 flex">
                   <div 
                     className={`h-full transition-all duration-300 rounded-full ${
-                      mrBookings.length >= 25 
+                      mrBookings.length >= 15 
                         ? 'bg-red-500' 
-                        : mrBookings.length >= 18 
+                        : mrBookings.length >= 11 
                           ? 'bg-amber-500' 
                           : 'bg-teal-600'
                     }`}
-                    style={{ width: `${Math.min(100, (mrBookings.length / 25) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (mrBookings.length / 15) * 100)}%` }}
                   />
                 </div>
 
                 <p className="text-[11px] font-semibold text-gray-500 leading-normal">
-                  To protect focus on emergency services, we restrict active industry scientific sessions to 25 bookings daily across our directors and surgical consultants.
+                  To protect focus on emergency services, we restrict active industry scientific sessions to 15 bookings daily across our directors and surgical consultants.
                 </p>
               </div>
 
@@ -857,7 +874,7 @@ export function MedicalRep() {
                           </div>
                         )}
 
-                        {mrBookings.length >= 25 && (
+                        {mrBookings.length >= 15 && (
                           <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-900 text-xs space-y-1">
                             <h4 className="font-extrabold uppercase tracking-wide flex items-center">
                               <AlertCircle className="h-4 w-4 text-red-600 mr-1" />
@@ -878,7 +895,7 @@ export function MedicalRep() {
                               placeholder="Anand Deshmukh"
                               value={mrName}
                               onChange={(e) => setMrName(e.target.value)}
-                              disabled={mrBookings.length >= 25}
+                              disabled={mrBookings.length >= 15}
                               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
                               required
                             />
@@ -893,7 +910,7 @@ export function MedicalRep() {
                               placeholder="Cipla, Sun Pharma, etc."
                               value={mrCompany}
                               onChange={(e) => setMrCompany(e.target.value)}
-                              disabled={mrBookings.length >= 25}
+                              disabled={mrBookings.length >= 15}
                               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
                               required
                             />
@@ -908,7 +925,7 @@ export function MedicalRep() {
                               placeholder="9876543210"
                               value={mrPhone}
                               onChange={(e) => setMrPhone(e.target.value)}
-                              disabled={mrBookings.length >= 25}
+                              disabled={mrBookings.length >= 15}
                               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
                               required
                             />
@@ -921,14 +938,14 @@ export function MedicalRep() {
                               id="mrDoctor"
                               value={mrDoctor}
                               onChange={(e) => setMrDoctor(e.target.value)}
-                              disabled={mrBookings.length >= 25}
+                              disabled={mrBookings.length >= 15}
                               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
                               required
                             >
                               <option value="">-- Choose Specialist Dr. --</option>
                               {mrDoctors.map(doc => (
                                 <option key={doc.id} value={doc.id}>
-                                  {doc.name} ({doc.callDay} Slot)
+                                  {doc.name} ({doc.callDay === "Tuesday" ? "Tuesday & Anytime Tuesday" : `${doc.callDay} Slot`})
                                 </option>
                               ))}
                             </select>
@@ -940,7 +957,15 @@ export function MedicalRep() {
                                   <span>Official calling day schedule</span>
                                 </p>
                                 <p className="font-bold text-[11px] text-teal-800">
-                                  {mrDoctors.find(d => d.id === mrDoctor)?.name} accepts representatives strictly on <strong className="font-extrabold text-teal-950 uppercase">{mrDoctors.find(d => d.id === mrDoctor)?.schedule}</strong>.
+                                  {mrDate && mrDate.startsWith("Tue") ? (
+                                    <span>
+                                      On <strong className="font-extrabold text-teal-950">Tuesdays</strong>, all doctors are available for booking strictly from <strong className="font-extrabold text-teal-950 uppercase">2:00 PM to 3:00 PM</strong>.
+                                    </span>
+                                  ) : (
+                                    <span>
+                                      {mrDoctors.find(d => d.id === mrDoctor)?.name} accepts representatives strictly on <strong className="font-extrabold text-teal-950 uppercase">{mrDoctors.find(d => d.id === mrDoctor)?.schedule}</strong>.
+                                    </span>
+                                  )}
                                 </p>
                               </div>
                             )}
@@ -953,7 +978,7 @@ export function MedicalRep() {
                               id="mrDate"
                               value={mrDate}
                               onChange={(e) => setMrDate(e.target.value)}
-                              disabled={!mrDoctor || mrBookings.length >= 25}
+                              disabled={!mrDoctor || mrBookings.length >= 15}
                               className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400"
                               required
                             >
@@ -1041,18 +1066,24 @@ export function MedicalRep() {
                               id="mrTimeSlot"
                               value={mrTimeSlot}
                               onChange={(e) => setMrTimeSlot(e.target.value)}
-                              disabled={mrBookings.length >= 25}
-                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
+                              disabled={mrBookings.length >= 15 || (mrDate && mrDate.startsWith("Tue"))}
+                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-550"
                               required
                             >
-                              <option value="">-- Select Slot Window --</option>
-                              {selectedDocObj && selectedDocObj.timeSlot !== "Special Request Slot" && (
-                                <option value={selectedDocObj.timeSlot}>{selectedDocObj.timeSlot} ({selectedDocObj.schedule} - Recommended)</option>
+                              {mrDate && mrDate.startsWith("Tue") ? (
+                                <option value="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM (Strict Tuesday Interval)</option>
+                              ) : (
+                                <>
+                                  <option value="">-- Select Slot Window --</option>
+                                  {selectedDocObj && selectedDocObj.timeSlot !== "Special Request Slot" && (
+                                    <option value={selectedDocObj.timeSlot}>{selectedDocObj.timeSlot} ({selectedDocObj.schedule} - Recommended)</option>
+                                  )}
+                                  <option value="10:30 AM - 11:30 AM">10:30 AM - 11:30 AM (Director Molecule Briefing)</option>
+                                  <option value="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM (Clinical Outpatient Interval)</option>
+                                  <option value="03:00 PM - 04:00 PM">03:00 PM - 04:00 PM (Specialized Presentation Slot)</option>
+                                  <option value="08:15 PM - 09:00 PM">08:15 PM - 09:00 PM (Late-Evening Scientific Round)</option>
+                                </>
                               )}
-                              <option value="10:30 AM - 11:30 AM">10:30 AM - 11:30 AM (Director Molecule Briefing)</option>
-                              <option value="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM (Clinical Outpatient Interval)</option>
-                              <option value="03:00 PM - 04:00 PM">03:00 PM - 04:00 PM (Specialized Presentation Slot)</option>
-                              <option value="08:15 PM - 09:00 PM">08:15 PM - 09:00 PM (Late-Evening Scientific Round)</option>
                             </select>
                           </div>
                         </div>
@@ -1066,7 +1097,7 @@ export function MedicalRep() {
                             placeholder="SGLT2 Inhibitor / Knee Orthosis components / Biosimilar Insulin"
                             value={mrProduct}
                             onChange={(e) => setMrProduct(e.target.value)}
-                            disabled={mrBookings.length >= 25}
+                            disabled={mrBookings.length >= 15}
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
                             required
                           />
@@ -1076,7 +1107,7 @@ export function MedicalRep() {
                           <button
                             type="submit"
                             disabled={
-                              mrBookings.length >= 25 || 
+                              mrBookings.length >= 15 || 
                               !mrDate || 
                               (mrDoctor ? getFilteredDatesWithStatus(mrDoctor).find(d => d.readable === mrDate)?.status !== "OPEN" : false)
                             }
@@ -1125,10 +1156,15 @@ export function MedicalRep() {
 
                     {/* Roster Table of calling days */}
                     <div className="space-y-2.5">
-                      <h5 className="font-extrabold text-teal-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
-                        Dedicated Weekly Call Days
-                      </h5>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <h5 className="font-extrabold text-teal-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
+                          Dedicated Weekly Call Days
+                        </h5>
+                        <span className="bg-amber-100/80 border border-amber-200 text-amber-950 text-[10px] font-black uppercase px-2 py-1 rounded shadow-3xs">
+                          ★ Tuesday Rule: All Drs Open strictly 2:00 PM - 3:00 PM
+                        </span>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {mrDoctors.map((doc, idx) => (
                           <div key={doc.id} className="p-3 bg-teal-50/20 border border-teal-100/40 rounded-xl flex items-start gap-2.5">
@@ -1264,7 +1300,7 @@ export function MedicalRep() {
                     <div className="flex justify-between items-center pb-2.5 border-b border-gray-155">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Appointments</span>
                       <span className="text-[10px] font-bold text-teal-850 bg-teal-50 px-2 py-0.5 rounded-md">
-                        {mrBookings.length} / 25 daily limit
+                        {mrBookings.length} / 15 daily limit
                       </span>
                     </div>
 
