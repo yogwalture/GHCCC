@@ -48,6 +48,7 @@ export function Navbar() {
     { name: "About Us", path: "/about" },
     { name: "Departments", path: "/departments" },
     { name: "Doctors", path: "/doctors" },
+    { name: "MR Portal", path: "/medical-rep" },
     { name: "Insurances", path: "/insurances" },
     { name: "Contact", path: "/contact" },
   ];
@@ -76,9 +77,10 @@ export function Navbar() {
               href="https://www.facebook.com/Gajananhospitalccu" 
               target="_blank" 
               rel="noopener noreferrer" 
-              className="flex items-center space-x-1 bg-blue-800 hover:bg-blue-700 px-2 py-1 rounded transition-colors"
+              className="flex items-center space-x-1 bg-blue-800 hover:bg-blue-700 px-2 py-1 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+              aria-label="Follow us on Facebook"
             >
-              <Facebook className="h-3 w-3 md:h-4 md:w-4" />
+              <Facebook className="h-3 w-3 md:h-4 md:w-4" aria-hidden="true" />
               <span className="font-bold hidden sm:inline">Follow Us</span>
             </a>
           </div>
@@ -100,7 +102,7 @@ export function Navbar() {
                 key={link.path}
                 to={link.path}
                 className={cn(
-                  "text-gray-600 hover:text-blue-900 font-medium transition-colors",
+                  "text-gray-600 hover:text-blue-900 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 rounded-sm px-1 py-0.5",
                   location.pathname === link.path && "text-blue-900 font-bold"
                 )}
               >
@@ -109,34 +111,37 @@ export function Navbar() {
             ))}
             <Link
               to="/book-appointment"
-              className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-2.5 rounded-md font-bold transition-colors flex items-center shadow-md shadow-[#25D366]/20"
+              className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-5 py-2.5 rounded-md font-bold transition-colors flex items-center shadow-md shadow-[#25D366]/20 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
             >
-              <MessageCircle className="mr-2 h-5 w-5" />
+              <MessageCircle className="mr-2 h-5 w-5" aria-hidden="true" />
               Book Appointment
             </Link>
           </nav>
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 text-gray-600"
+            className="lg:hidden p-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-900 rounded-md"
             onClick={() => setIsOpen(!isOpen)}
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
+            aria-label={isOpen ? "Close menu" : "Open menu"}
           >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       {isOpen && (
-        <div className="lg:hidden bg-white border-t">
+        <div id="mobile-menu" className="lg:hidden bg-white border-t">
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 className={cn(
-                  "text-gray-600 font-medium py-2",
-                  location.pathname === link.path && "text-blue-900 font-bold"
+                  "text-gray-600 font-medium py-2 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 rounded-sm px-2",
+                  location.pathname === link.path && "text-blue-900 font-bold bg-blue-50"
                 )}
                 onClick={() => setIsOpen(false)}
               >
@@ -145,10 +150,10 @@ export function Navbar() {
             ))}
             <Link
               to="/book-appointment"
-              className="bg-[#25D366] text-white text-center px-6 py-3 rounded-md font-bold flex items-center justify-center shadow-md"
+              className="bg-[#25D366] text-white text-center px-6 py-3 rounded-md font-bold flex items-center justify-center shadow-md focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
               onClick={() => setIsOpen(false)}
             >
-              <MessageCircle className="mr-2 h-5 w-5" />
+              <MessageCircle className="mr-2 h-5 w-5" aria-hidden="true" />
               Book Appointment
             </Link>
           </div>

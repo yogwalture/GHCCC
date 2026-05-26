@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { MessageCircle, User, Stethoscope, ArrowRight, CheckCircle2, Phone, Mail, FileText } from "lucide-react";
+import { MessageCircle, User, Stethoscope, ArrowRight, CheckCircle2, Phone, Mail, FileText, ExternalLink } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 const directors = [
   { id: "dr-gitesh", name: "Dr. Gitesh Dalvi", spec: "Physician Diabetologist & Intensivist" },
@@ -31,56 +32,104 @@ export function BookAppointment() {
     // Redirect to WhatsApp
     window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encodedMessage}`, "_blank");
     
+    // Save to localStorage so admin can see it and manage feedback
+    try {
+      const existing = localStorage.getItem("gajanan_patient_appointments");
+      const list = existing ? JSON.parse(existing) : [];
+      const newAppt = {
+        id: `clinical-${Date.now()}`,
+        name,
+        phone,
+        email: email || "Not provided",
+        doctor: selectedDoc || doctor,
+        reason: reason || "General Consultation",
+        date: new Date().toISOString().split("T")[0],
+        time: "Tentative",
+        status: "confirmed",
+        feedbackScheduled: true,
+        feedbackScheduledTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+        feedbackTriggered: false
+      };
+      localStorage.setItem("gajanan_patient_appointments", JSON.stringify([newAppt, ...list]));
+    } catch (e) {
+      console.error("Local storage error:", e);
+    }
+
     // Show confirmation state
     setIsSent(true);
-    
-    // Reset form after a delay
-    setTimeout(() => {
-      setName("");
-      setPhone("");
-      setEmail("");
-      setDoctor("");
-      setReason("");
-      setIsSent(false);
-    }, 10000); // Reset after 10 seconds
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-16">
+    <div className="bg-gradient-to-b from-teal-50/20 to-gray-150/10 min-h-screen py-12">
       <div className="container mx-auto px-4 max-w-3xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-blue-900 mb-4">Book an Appointment</h1>
-          <p className="text-lg text-gray-600">
-            Consult with our Main Directors and Specialists. Book instantly via our WhatsApp Chatbot.
+        <div className="text-center mb-8">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-teal-55 text-teal-800 text-[10px] font-black uppercase tracking-wider mb-2 border border-teal-100">
+            Outpatient Services
+          </span>
+          <h1 className="text-2xl md:text-3xl font-black text-teal-950 tracking-tight leading-tight mb-2">Book an Appointment</h1>
+          <p className="text-xs md:text-sm text-gray-500 max-w-md mx-auto leading-relaxed font-semibold">
+            Consult with our Directors and Orthopaedic Specialists. Prep your ticket and secure timings via WhatsApp instantly.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border-t-4 border-[#25D366]">
-          <div className="p-8 md:p-10">
-            {isSent ? (
-              <div className="text-center py-12 animate-in fade-in zoom-in duration-500">
-                <div className="mx-auto flex items-center justify-center h-24 w-24 rounded-full bg-green-100 mb-6">
-                  <CheckCircle2 className="h-12 w-12 text-green-600" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">Request Sent!</h2>
-                <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
-                  Your booking request has been initiated. Please complete the process in the WhatsApp window that just opened.
-                </p>
-                <button
-                  onClick={() => setIsSent(false)}
-                  className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+        <div className="bg-white rounded-2xl shadow-xs overflow-hidden border border-gray-150">
+          <div className="p-6 md:p-8">
+            <AnimatePresence mode="wait">
+              {isSent ? (
+                <motion.div 
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="text-center py-8"
                 >
-                  Book Another Appointment
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-center space-x-3 mb-8 bg-[#25D366]/10 py-4 rounded-lg text-[#25D366]">
-                  <MessageCircle className="h-8 w-8" />
-                  <span className="text-xl font-bold">WhatsApp Booking</span>
-                </div>
+                  <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-50 mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                  </div>
+                  <h2 className="text-xl font-black text-gray-905 mb-2">Redirecting to WhatsApp...</h2>
+                  <p className="text-xs text-gray-500 mb-6 max-w-md mx-auto font-medium">
+                    Your appointment details have been prepared. Please click <strong>"Send"</strong> inside WhatsApp to file the request on our roster system.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button
+                      onClick={() => {
+                        const message = `Hello Gajanan Hospital & Critical Care Centre,\n\nI would like to book an appointment.\n\n*Patient Name:* ${name}\n*Phone:* ${phone}\n*Email:* ${email || 'Not provided'}\n*Consulting Doctor:* ${directors.find(d => d.id === doctor)?.name}\n*Reason for Visit:* ${reason || 'General Consultation'}`;
+                        window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encodeURIComponent(message)}`, "_blank");
+                      }}
+                      className="inline-flex items-center justify-center px-5 py-2.5 bg-[#25D366] text-white text-xs font-black uppercase tracking-wider rounded-lg hover:bg-[#20bd5a] transition-all cursor-pointer shadow-xs"
+                    >
+                      <ExternalLink className="mr-1.5 h-4 w-4" />
+                      Manually open WhatsApp Link
+                    </button>
+                    <button
+                      onClick={() => {
+                        setName("");
+                        setPhone("");
+                        setEmail("");
+                        setDoctor("");
+                        setReason("");
+                        setIsSent(false);
+                      }}
+                      className="inline-flex items-center justify-center px-5 py-2.5 border border-gray-200 text-xs font-black uppercase tracking-wider rounded-lg text-gray-500 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      Book Another Slip
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="form"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <div className="flex items-center justify-center space-x-2.5 mb-6 bg-teal-50/50 py-3 px-4 border border-teal-100 rounded-xl text-teal-850">
+                    <MessageCircle className="h-5 w-5 animate-pulse" />
+                    <span className="text-xs font-black uppercase tracking-wider">Automated Assistant Booking Slip</span>
+                  </div>
 
-                <form onSubmit={handleWhatsAppBooking} className="space-y-6">
+                  <form onSubmit={handleWhatsAppBooking} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-6">
                     {/* Patient Name */}
                     <div>
@@ -197,23 +246,24 @@ export function BookAppointment() {
                   <button
                     type="submit"
                     disabled={!name || !doctor || !phone}
-                    className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-lg text-white bg-[#25D366] hover:bg-[#20bd5a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#25D366] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-8 shadow-lg shadow-[#25D366]/30"
+                    className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-xs font-black uppercase tracking-wider rounded-xl text-white bg-teal-600 hover:bg-teal-700 disabled:bg-gray-150 disabled:text-gray-400 focus:outline-none transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6 shadow-xs cursor-pointer group"
                   >
-                    <MessageCircle className="mr-2 h-6 w-6" />
-                    Continue to WhatsApp Chat
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <MessageCircle className="mr-1.5 h-4.5 w-4.5" />
+                    Proceed to WhatsApp Chat
+                    <ArrowRight className="ml-1.5 h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                   </button>
                 </form>
 
-                <div className="mt-8 text-center text-sm text-gray-500">
-                  <p>By continuing, you will be redirected to WhatsApp to complete your booking with our automated assistant.</p>
-                  <p className="mt-2 font-semibold text-gray-700">Emergency & Primary Contact: 8329573283</p>
+                <div className="mt-6 text-center text-[11px] text-gray-400 font-semibold leading-normal">
+                  <p>By proceeding, you will be bridged to WhatsApp to secure your slot with on-floor clinical support.</p>
+                  <p className="mt-1.5 text-slate-800">Primary Ward Hotline: +91 83295 73283</p>
                 </div>
-              </>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
+  </div>
   );
 }

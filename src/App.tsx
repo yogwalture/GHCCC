@@ -15,6 +15,8 @@ import { NABH } from "./pages/NABH";
 import { MJPJAY } from "./pages/MJPJAY";
 import { ABPMJAY } from "./pages/ABPMJAY";
 import Insurances from "./pages/Insurances";
+import { Admin } from "./pages/Admin";
+import { MedicalRep } from "./pages/MedicalRep";
 
 export default function App() {
   return (
@@ -27,11 +29,13 @@ export default function App() {
           <Route path="doctors" element={<Doctors />} />
           <Route path="contact" element={<Contact />} />
           <Route path="book-appointment" element={<BookAppointment />} />
+          <Route path="medical-rep" element={<MedicalRep />} />
           <Route path="nabh" element={<NABH />} />
           <Route path="mjpjay" element={<MJPJAY />} />
           <Route path="ab-pmjay" element={<ABPMJAY />} />
           <Route path="insurances" element={<Insurances />} />
         </Route>
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Router>
   );

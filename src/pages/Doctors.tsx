@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { User, Award, Clock, MapPin } from "lucide-react";
+import { TiltCard } from "../components/ui/TiltCard";
 
 export function Doctors() {
   const [isLoading, setIsLoading] = useState(true);
@@ -171,11 +172,15 @@ export function Doctors() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-16">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <div className="bg-gray-50 min-h-screen py-16 relative overflow-hidden">
+      {/* Dynamic ambient blur light shades for enhanced modern aesthetics */}
+      <div className="absolute top-[10%] left-[-5%] w-[45%] h-[45%] rounded-full bg-blue-100/30 blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] rounded-full bg-orange-100/20 blur-[120px] pointer-events-none" />
+
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-blue-900 mb-6">Our Medical Team</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-blue-900 mb-6 tracking-tight">Our Medical Team</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
             Meet our dedicated directors and expert consultants committed to your health and well-being.
           </p>
         </div>
@@ -190,30 +195,38 @@ export function Doctors() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             {directors.map((director, index) => (
-              <div key={index} className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col md:flex-row hover:shadow-2xl transition-shadow duration-300">
-                <div className="md:w-1/3 bg-blue-900 flex items-center justify-center p-8">
-                  <div className="bg-white/10 p-6 rounded-full border-2 border-white/20">
+              <TiltCard 
+                key={index} 
+                maxTilt={6} 
+                scale={1.01} 
+                glowColor="rgba(30, 58, 138, 0.1)"
+                className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col md:flex-row h-full group"
+              >
+                <div className="md:w-1/3 bg-blue-900 flex items-center justify-center p-8 shrink-0">
+                  <div className="bg-white/10 p-6 rounded-full border-2 border-white/20 transition-transform duration-500 group-hover:scale-110">
                     <User className="h-20 w-20 text-white" />
                   </div>
                 </div>
-                <div className="md:w-2/3 p-8">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold uppercase tracking-wider rounded-full mb-2">
-                        {director.role}
-                      </span>
-                      <h3 className="text-2xl font-bold text-gray-900">{director.name}</h3>
+                <div className="md:w-2/3 p-8 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <span className="inline-block px-3 py-1 bg-orange-100 text-orange-700 text-xs font-bold uppercase tracking-wider rounded-full mb-2">
+                          {director.role}
+                        </span>
+                        <h3 className="text-2xl font-bold text-gray-900">{director.name}</h3>
+                      </div>
                     </div>
+                    
+                    <p className="text-blue-700 font-semibold mb-4 flex items-center">
+                      <Award className="h-4 w-4 mr-2" />
+                      {director.specialty}
+                    </p>
+                    
+                    <p className="text-gray-600 text-sm mb-6 leading-relaxed italic">
+                      "{director.description}"
+                    </p>
                   </div>
-                  
-                  <p className="text-blue-700 font-semibold mb-4 flex items-center">
-                    <Award className="h-4 w-4 mr-2" />
-                    {director.specialty}
-                  </p>
-                  
-                  <p className="text-gray-600 text-sm mb-6 leading-relaxed italic">
-                    "{director.description}"
-                  </p>
                   
                   <div className="space-y-3 border-t border-gray-100 pt-6">
                     <div className="flex items-start text-sm">
@@ -229,7 +242,7 @@ export function Doctors() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </div>
         </div>
@@ -251,8 +264,14 @@ export function Doctors() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {doctors.map((doctor, index) => (
-                    <div key={index} className="flex items-start space-x-4 p-5 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all">
-                      <div className="bg-blue-100 p-2 rounded-full shrink-0">
+                    <TiltCard 
+                      key={index} 
+                      maxTilt={8} 
+                      scale={1.03}
+                      glowColor="rgba(30, 58, 138, 0.05)"
+                      className="flex items-start space-x-4 p-5 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition-all h-full group"
+                    >
+                      <div className="bg-blue-100 p-2 rounded-full shrink-0 transition-transform duration-300 group-hover:scale-110">
                         <User className="h-5 w-5 text-blue-700" />
                       </div>
                       <div>
@@ -261,7 +280,7 @@ export function Doctors() {
                           {doctor.qualifications}
                         </p>
                       </div>
-                    </div>
+                    </TiltCard>
                   ))}
                 </div>
               </div>

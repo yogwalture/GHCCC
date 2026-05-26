@@ -159,7 +159,7 @@ export function Footer() {
 
         <div className="border-t border-blue-900 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm text-center md:text-left mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} Gajanan Hospital & Critical Care Centre. All rights reserved.
+            &copy; {new Date().getFullYear()} Gajanan Hospital & Critical Care Centre. All rights reserved. | <Link to="/admin" className="hover:text-white transition-colors">Admin Login</Link>
           </p>
           <div className="flex flex-wrap justify-center md:justify-end gap-6 text-sm text-gray-400">
             <Link to="/nabh" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
