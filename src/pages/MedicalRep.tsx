@@ -122,20 +122,68 @@ export function MedicalRep() {
   const [bookingError, setBookingError] = useState("");
 
   const mrDoctors = [
-    { id: "dr-sachin-s", name: "Dr. Sachin Suryawanshi", desc: "Director - Medicine & Critical Care" },
-    { id: "dr-vijay", name: "Dr. Vijay Walture", desc: "Director - Medicine & Critical Care" },
-    { id: "dr-gitesh", name: "Dr. Gitesh Dalvi", desc: "Director - Medicine & Critical Care" },
-    { id: "dr-dilip", name: "Dr. Dilip Thombre", desc: "Director - Medicine & Critical Care" },
-    { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", desc: "Director - Medicine & Critical Care" },
-    { id: "dr-sachin-patil", name: "Dr. Sachin Patil", desc: "Consultant - Orthopaedic Department" }
+    { id: "dr-gitesh", name: "Dr. Gitesh Dalvi", desc: "Director - Medicine & Critical Care", schedule: "Tuesdays (1:30 PM to 2:00 PM)", timeSlot: "1:30 PM - 2:00 PM", callDay: "Tuesday" },
+    { id: "dr-vijay", name: "Dr. Vijay Walture", desc: "Director - Medicine & Critical Care", schedule: "Fridays (2:30 PM to 3:00 PM)", timeSlot: "2:30 PM - 3:00 PM", callDay: "Friday" },
+    { id: "dr-sachin-s", name: "Dr. Sachin Suryawanshi", desc: "Director - Medicine & Critical Care", schedule: "Fridays (3:00 PM to 3:30 PM)", timeSlot: "3:00 PM - 3:30 PM", callDay: "Friday" },
+    { id: "dr-sachin-patil", name: "Dr. Sachin Patil", desc: "Consultant - Orthopaedic Department", schedule: "1st Thursday of Month (3:00 PM to 3:30 PM)", timeSlot: "3:00 PM - 3:30 PM", callDay: "1st Thursday" },
+    { id: "dr-dilip", name: "Dr. Dilip Thombre", desc: "Director - Medicine & Critical Care", schedule: "Special permission only", timeSlot: "Special Request Slot", callDay: "Prior Appointment" },
+    { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", desc: "Director - Medicine & Critical Care", schedule: "Special permission only", timeSlot: "Special Request Slot", callDay: "Prior Appointment" }
   ];
 
-  const getNextFiveWorkingDays = () => {
+  const getCallStartTime = (timeSlot: string): { hour: number; minute: number } => {
+    if (!timeSlot || timeSlot === "Special Request Slot") {
+      return { hour: 17, minute: 0 };
+    }
+    try {
+      // e.g. "1:30 PM - 2:00 PM"
+      const startPart = timeSlot.split("-")[0].trim(); // "1:30 PM"
+      const [timeStr, ampm] = startPart.split(" "); // ["1:30", "PM"]
+      let [hourStr, minStr] = timeStr.split(":"); // ["1", "30"]
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minStr, 10);
+      if (ampm.toUpperCase() === "PM" && hour !== 12) {
+        hour += 12;
+      } else if (ampm.toUpperCase() === "AM" && hour === 12) {
+        hour = 0;
+      }
+      return { hour, minute };
+    } catch (e) {
+      return { hour: 13, minute: 30 }; // default fallback 1:30 PM
+    }
+  };
+
+  const isDateMatchingDoctor = (dateObj: Date, callDay: string): boolean => {
+    const dayName = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+    if (callDay === "Tuesday" && dayName === "Tuesday") return true;
+    if (callDay === "Friday" && dayName === "Friday") return true;
+    if (callDay === "1st Thursday") {
+      if (dayName !== "Thursday") return false;
+      const dateNum = dateObj.getDate();
+      return dateNum >= 1 && dateNum <= 7;
+    }
+    if (callDay === "Prior Appointment") {
+      return dateObj.getDay() !== 0; // Mon-Sat are acceptable
+    }
+    return false;
+  };
+
+  const getFilteredDatesWithStatus = (docId: string) => {
+    const docObj = mrDoctors.find(d => d.id === docId);
+    if (!docObj) return [];
+
     const list = [];
-    const temp = new Date();
-    let count = 0;
-    while (count < 6) {
-      if (temp.getDay() !== 0) { // Skip Sunday
+    const today = new Date();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Generate upcoming dates (up to 30 days) to find available call days
+    for (let i = 0; i < 30; i++) {
+      const temp = new Date(todayMidnight.getTime());
+      temp.setDate(temp.getDate() + i);
+
+      // Skip Sundays
+      if (temp.getDay() === 0) continue;
+
+      if (isDateMatchingDoctor(temp, docObj.callDay)) {
         const readable = temp.toLocaleDateString("en-US", {
           weekday: "short",
           month: "short",
@@ -143,19 +191,63 @@ export function MedicalRep() {
           year: "numeric"
         });
         const iso = temp.toISOString().split("T")[0];
-        list.push({ readable, iso });
-        count++;
+
+        // Precision time calculations
+        const now = new Date();
+        const callTimeParts = getCallStartTime(docObj.timeSlot);
+        
+        const callStartTime = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate(), callTimeParts.hour, callTimeParts.minute, 0, 0);
+        
+        // Starts exactly 1 day before at 8:00 AM
+        const bookingOpenTime = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate() - 1, 8, 0, 0, 0);
+
+        let status: "OPEN" | "LOCKED" | "EXPIRED" = "OPEN";
+        if (now.getTime() < bookingOpenTime.getTime()) {
+          status = "LOCKED";
+        } else if (now.getTime() >= callStartTime.getTime()) {
+          status = "EXPIRED";
+        }
+
+        const priorReadable = bookingOpenTime.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric"
+        }) + " at 8:00 AM";
+
+        const callTimeReadable = callStartTime.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+        list.push({
+          readable,
+          iso,
+          status,
+          bookingOpenTime,
+          callStartTime,
+          priorReadable,
+          callTimeReadable
+        });
       }
-      temp.setDate(temp.getDate() + 1);
     }
     return list;
   };
 
+  useEffect(() => {
+    if (mrDoctor) {
+      const docObj = mrDoctors.find(d => d.id === mrDoctor);
+      if (docObj) {
+        setMrTimeSlot(docObj.timeSlot);
+      }
+      setMrDate(""); // Reset selected date when doctor changes
+    }
+  }, [mrDoctor]);
+
   const defaultMrBookings = [
-    { name: "Rohan Khanna", company: "Cipla Ltd", doctor: "Dr. Gitesh Dalvi", date: "Wed, May 27, 2026", time: "10:30 AM - 11:30 AM", product: "Inhaler Tech / Monotherapy", status: "Fixed & Confirmed", code: "MR-GAJ-8371" },
-    { name: "Priya Sharma", company: "Sun Pharmaceutical", doctor: "Dr. Sachin Suryawanshi", date: "Wed, May 27, 2026", time: "02:00 PM - 03:00 PM", product: "Anti-diabetic formulations", status: "Fixed & Confirmed", code: "MR-GAJ-4251" },
-    { name: "Amit Joshi", company: "Dr. Reddy's Lab", doctor: "Dr. Dilip Thombre", date: "Thu, May 28, 2026", time: "03:00 PM - 04:00 PM", product: "Cardiovascular Beta-Blockers", status: "Fixed & Confirmed", code: "MR-GAJ-9134" },
-    { name: "Snehal Sinde", company: "Lupin Pharmaceuticals", doctor: "Dr. Sachin Patil", date: "Thu, May 28, 2026", time: "02:00 PM - 03:00 PM", product: "Osteoarthritis Joint Supplements", status: "Fixed & Confirmed", code: "MR-GAJ-1082" }
+    { name: "Rohan Khanna", company: "Cipla Ltd", doctor: "Dr. Gitesh Dalvi", date: "Tue, May 26, 2026", time: "1:30 PM - 2:00 PM", product: "Inhaler Tech / Monotherapy", status: "Fixed & Confirmed", code: "MR-GAJ-8371" },
+    { name: "Priya Sharma", company: "Sun Pharmaceutical", doctor: "Dr. Sachin Suryawanshi", date: "Fri, May 29, 2026", time: "3:00 PM - 3:30 PM", product: "Anti-diabetic formulations", status: "Fixed & Confirmed", code: "MR-GAJ-4251" },
+    { name: "Amit Joshi", company: "Dr. Reddy's Lab", doctor: "Dr. Vijay Walture", date: "Fri, May 29, 2026", time: "2:30 PM - 3:00 PM", product: "Cardiovascular Beta-Blockers", status: "Fixed & Confirmed", code: "MR-GAJ-9134" },
+    { name: "Snehal Sinde", company: "Lupin Pharmaceuticals", doctor: "Dr. Sachin Patil", date: "Thu, Jun 4, 2026", time: "3:00 PM - 3:30 PM", product: "Osteoarthritis Joint Supplements", status: "Fixed & Confirmed", code: "MR-GAJ-1082" }
   ];
 
   useEffect(() => {
@@ -183,6 +275,16 @@ export function MedicalRep() {
 
     if (!mrName || !mrCompany || !mrDoctor || !mrPhone || !mrDate || !mrTimeSlot || !mrProduct) {
       setBookingError("Please fill out all representative details.");
+      return;
+    }
+
+    const selectedDateObj = getFilteredDatesWithStatus(mrDoctor).find(d => d.readable === mrDate);
+    if (selectedDateObj && selectedDateObj.status !== "OPEN") {
+      if (selectedDateObj.status === "LOCKED") {
+        setBookingError(`Appointments can only be booked from 1 day prior starting at 8:00 AM. Booking for this slot opens on ${selectedDateObj.priorReadable}.`);
+      } else {
+        setBookingError(`This booking window has closed. The call timing (${selectedDateObj.callTimeReadable}) for this date has already passed.`);
+      }
       return;
     }
 
@@ -345,6 +447,8 @@ export function MedicalRep() {
     setAwaitingConfirm(null);
     setBookingError("");
   };
+
+  const selectedDocObj = mrDoctors.find(d => d.id === mrDoctor);
 
   return (
     <div className="bg-gray-50/50 min-h-screen font-sans text-gray-800">
@@ -722,17 +826,24 @@ export function MedicalRep() {
                               required
                             >
                               <option value="">-- Choose Specialist Dr. --</option>
-                              <optgroup label="Core Medical Directors">
-                                {mrDoctors.slice(0, 5).map(doc => (
-                                  <option key={doc.id} value={doc.id}>{doc.name}</option>
-                                ))}
-                              </optgroup>
-                              <optgroup label="Orthopaedic Specialty">
-                                {mrDoctors.slice(5).map(doc => (
-                                  <option key={doc.id} value={doc.id}>{doc.name}</option>
-                                ))}
-                              </optgroup>
+                              {mrDoctors.map(doc => (
+                                <option key={doc.id} value={doc.id}>
+                                  {doc.name} ({doc.callDay} Slot)
+                                </option>
+                              ))}
                             </select>
+                            
+                            {mrDoctor && (
+                              <div className="mt-2 p-2.5 bg-teal-50/80 border border-teal-100 rounded-lg text-[10px] text-teal-950 font-semibold space-y-1">
+                                <p className="flex items-center gap-1 text-teal-900 uppercase tracking-wider text-[9px] font-black">
+                                  <Clock className="w-3 h-3 text-teal-600 animate-pulse" />
+                                  <span>Official calling day schedule</span>
+                                </p>
+                                <p className="font-bold text-[11px] text-teal-800">
+                                  {mrDoctors.find(d => d.id === mrDoctor)?.name} accepts representatives strictly on <strong className="font-extrabold text-teal-950 uppercase">{mrDoctors.find(d => d.id === mrDoctor)?.schedule}</strong>.
+                                </p>
+                              </div>
+                            )}
                           </div>
 
                           {/* Dates */}
@@ -742,15 +853,85 @@ export function MedicalRep() {
                               id="mrDate"
                               value={mrDate}
                               onChange={(e) => setMrDate(e.target.value)}
-                              disabled={mrBookings.length >= 25}
-                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all"
+                              disabled={!mrDoctor || mrBookings.length >= 25}
+                              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-extrabold focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400"
                               required
                             >
-                              <option value="">-- Select Available Date --</option>
-                              {getNextFiveWorkingDays().map(d => (
-                                  <option key={d.iso} value={d.readable}>{d.readable}</option>
-                              ))}
+                              {!mrDoctor ? (
+                                <option value="">-- Please Select Target Doctor First --</option>
+                              ) : (
+                                <>
+                                  <option value="">-- Select Available Date --</option>
+                                  {getFilteredDatesWithStatus(mrDoctor).map(d => (
+                                    <option key={d.iso} value={d.readable}>
+                                      {d.readable} {d.status === "OPEN" ? "★ (Active Roster - Booking Open!)" : d.status === "LOCKED" ? `(Locked - Opens at 8:00 AM on 1 day prior)` : `(Closed - Call Time Passed)`}
+                                    </option>
+                                  ))}
+                                </>
+                              )}
                             </select>
+
+                            {/* Alert messages for the 1-day prior constraint */}
+                            {mrDoctor && (
+                              <div className="mt-2 text-[10px] leading-relaxed">
+                                {!mrDate ? (
+                                  <div className="p-2.5 bg-teal-50/50 border border-teal-100 rounded-lg text-teal-850 font-semibold flex items-start gap-1.5 shadow-xs">
+                                    <AlertCircle className="h-3.5 w-3.5 text-teal-600 shrink-0 mt-0.5" />
+                                    <div>
+                                      <p className="font-extrabold uppercase text-[9px] tracking-wider text-teal-900">Roster Window Rule</p>
+                                      <p className="text-gray-600 font-medium font-sans">
+                                        Booking is open exactly from 1 day before at 8:00 AM up to the doctor's call time. Choose the day marked with ★.
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : (() => {
+                                  const selectedDateObj = getFilteredDatesWithStatus(mrDoctor).find(d => d.readable === mrDate);
+                                  if (selectedDateObj) {
+                                    if (selectedDateObj.status === "OPEN") {
+                                      return (
+                                        <div className="p-2.5 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg font-semibold flex items-start gap-1.5 shadow-xs">
+                                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                          <div>
+                                            <p className="font-bold uppercase text-[9px] tracking-wider text-emerald-850">Roster Window Active ✓</p>
+                                            <p className="text-gray-650 font-sans">Booking is open and active! Slots are available and booking remains open until the call starts ({selectedDateObj.callTimeReadable}).</p>
+                                          </div>
+                                        </div>
+                                      );
+                                    } else if (selectedDateObj.status === "LOCKED") {
+                                      return (
+                                        <div className="p-2.5 bg-amber-50 text-amber-950 border border-amber-200 rounded-lg font-semibold flex flex-col gap-1.5 shadow-xs">
+                                          <div className="flex items-start gap-1.5">
+                                            <AlertCircle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                                            <div>
+                                              <p className="font-bold uppercase text-[9px] tracking-wider text-amber-900">Booking Locked (Too Early)</p>
+                                              <p className="text-gray-650 font-medium font-sans">
+                                                Representatives can take appointment just one day before the call date.
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <p className="text-[9.5px] font-bold text-amber-850 bg-white/70 px-2 py-1 rounded border border-amber-100/50">
+                                            📅 Booking opens at 8:00 AM on <strong className="font-extrabold uppercase text-amber-950">{selectedDateObj.priorReadable}</strong>.
+                                          </p>
+                                        </div>
+                                      );
+                                    } else {
+                                      return (
+                                        <div className="p-2.5 bg-rose-50 text-rose-950 border border-rose-200 rounded-lg font-semibold flex flex-col gap-1.5 shadow-xs">
+                                          <div className="flex items-start gap-1.5">
+                                            <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
+                                            <div>
+                                              <p className="font-bold uppercase text-[9px] tracking-wider text-rose-900">Roster Closed (Passed)</p>
+                                              <p className="text-gray-650 font-medium">The call timing ({selectedDateObj.callTimeReadable}) for this date has already passed. Please select another date.</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            )}
                           </div>
 
                           {/* Slots */}
@@ -765,6 +946,9 @@ export function MedicalRep() {
                               required
                             >
                               <option value="">-- Select Slot Window --</option>
+                              {selectedDocObj && selectedDocObj.timeSlot !== "Special Request Slot" && (
+                                <option value={selectedDocObj.timeSlot}>{selectedDocObj.timeSlot} ({selectedDocObj.schedule} - Recommended)</option>
+                              )}
                               <option value="10:30 AM - 11:30 AM">10:30 AM - 11:30 AM (Director Molecule Briefing)</option>
                               <option value="02:00 PM - 03:00 PM">02:00 PM - 03:00 PM (Clinical Outpatient Interval)</option>
                               <option value="03:00 PM - 04:00 PM">03:00 PM - 04:00 PM (Specialized Presentation Slot)</option>
@@ -791,11 +975,23 @@ export function MedicalRep() {
                         <div className="pt-4 border-t border-gray-100">
                           <button
                             type="submit"
-                            disabled={mrBookings.length >= 25}
+                            disabled={
+                              mrBookings.length >= 25 || 
+                              !mrDate || 
+                              (mrDoctor ? getFilteredDatesWithStatus(mrDoctor).find(d => d.readable === mrDate)?.status !== "OPEN" : false)
+                            }
                             className="w-full bg-teal-600 hover:bg-teal-700 text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none hover:scale-[1.005] transition-all text-xs cursor-pointer uppercase tracking-wider"
                           >
                             <MessageCircle className="h-4 w-4" />
-                            Launch Dual-Step Booking Route
+                            {(() => {
+                              if (!mrDoctor || !mrDate) return "Launch Dual-Step Booking Route";
+                              const selectedDateObj = getFilteredDatesWithStatus(mrDoctor).find(d => d.readable === mrDate);
+                              if (selectedDateObj) {
+                                if (selectedDateObj.status === "LOCKED") return "Booking Locked (Opens 1 Day Prior at 8:00 AM)";
+                                if (selectedDateObj.status === "EXPIRED") return "Booking Closed (Call Time Passed)";
+                              }
+                              return "Launch Dual-Step Booking Route";
+                            })()}
                           </button>
                           <p className="text-[10px] text-gray-400 text-center mt-2.5 font-semibold leading-normal">
                             By booking, you agree to prioritize direct patient emergencies and follow clinical director rules.
@@ -813,29 +1009,145 @@ export function MedicalRep() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.15 }}
-                    className="space-y-5 text-xs text-gray-600 font-medium leading-relaxed"
+                    className="space-y-6 text-xs text-gray-700"
                   >
-                    <h4 className="text-base font-black text-gray-900 uppercase tracking-wide border-b border-gray-100 pb-1.5">Briefing Regulations</h4>
-                    <p className="leading-relaxed">To ensure standard critical care schedules and diagnostic procedures remain completely uninterrupted, Gajanan Hospital maintains strict representative criteria:</p>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-teal-50/20 rounded-xl border border-teal-100/50 space-y-1">
-                        <h5 className="font-extrabold text-teal-900 uppercase text-[10px] tracking-wider">Scientific Content Standard</h5>
-                        <p className="text-gray-500 leading-normal text-[11px]">Submission materials are limited to peer-reviewed clinical data panels, bio-equivalence studies, or patent updates. Promotional branding displays are prohibited.</p>
-                      </div>
-                      <div className="p-4 bg-sky-50/20 rounded-xl border border-sky-100/50 space-y-1">
-                        <h5 className="font-extrabold text-[#1d4ed8] uppercase text-[10px] tracking-wider">Departmental Priorities</h5>
-                        <p className="text-gray-500 leading-normal text-[11px]">All hip/knee reconstruction assets or orthopaedic drugs must be logged strictly for Dr. Sachin Patil's dedicated consultative windows.</p>
+                    {/* Official Notice Board Header */}
+                    <div className="bg-gradient-to-tr from-teal-950 via-slate-900 to-indigo-950 text-white p-5 rounded-xl border border-teal-500/10 flex flex-col items-center text-center relative overflow-hidden shadow-sm">
+                      <div className="absolute inset-0 bg-radial-gradient from-teal-500/15 via-transparent to-transparent opacity-60 pointer-events-none" />
+                      <div className="relative z-10 space-y-1.5 w-full">
+                        <p className="text-[9px] font-black tracking-widest text-teal-400 uppercase">Gajanan Hospital & Critical Care Centre</p>
+                        <h4 className="text-sm md:text-base font-black tracking-wide text-slate-100 uppercase border-y border-teal-500/30 py-1.5 px-6 inline-block w-full">
+                          Guideline for Medical Representative
+                        </h4>
+                        <p className="text-[10px] text-gray-300 font-medium">Verified Official Roster Rules (Sarang Society, Plot No. 8, Garkheda)</p>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-100">
-                      <h5 className="font-extrabold text-gray-900 uppercase text-[10px] tracking-wide mb-2">Policy Checkpoints:</h5>
-                      <ul className="list-disc pl-4 space-y-2 text-[11px] text-gray-500">
-                        <li>Roster reservations booked online and confirmed via standard WhatsApp triggers are mandatory. Drop-ins or unscheduled briefings will not be facilitated.</li>
-                        <li>Scientific presentation durations are strictly restricted to 8-10 minutes maximum duration.</li>
-                        <li>Authorized reps must carry valid industry identity tokens and active immunization cards upon ward entry.</li>
-                      </ul>
+                    {/* Roster Table of calling days */}
+                    <div className="space-y-2.5">
+                      <h5 className="font-extrabold text-teal-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
+                        Dedicated Weekly Call Days
+                      </h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {mrDoctors.map((doc, idx) => (
+                          <div key={doc.id} className="p-3 bg-teal-50/20 border border-teal-100/40 rounded-xl flex items-start gap-2.5">
+                            <span className="bg-teal-600 text-white font-black h-5 w-5 rounded-md flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <div className="space-y-0.5">
+                              <p className="font-extrabold text-slate-900 text-xs">{doc.name.toUpperCase()}</p>
+                              <p className="text-gray-400 text-[10px] font-semibold">{doc.desc}</p>
+                              <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                                <span className="bg-teal-50 text-teal-850 border border-teal-100 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">
+                                  {doc.callDay}
+                                </span>
+                                <span className="text-[10px] text-gray-600 font-extrabold flex items-center gap-0.5">
+                                  <Clock className="w-3 h-3 text-teal-600" />
+                                  {doc.schedule.split("(")[1]?.replace(")", "") || doc.timeSlot}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Conduct rules verbatim from printed notice list */}
+                    <div className="space-y-3 pt-1">
+                      <h5 className="font-extrabold text-teal-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse" />
+                        Code of Conduct (Adherence Mandatory)
+                      </h5>
+                      <div className="bg-white rounded-xl border border-gray-150 p-4 divide-y divide-gray-100">
+                        
+                        <div className="pb-3 flex items-start gap-2.5 text-xs">
+                          <span className="text-red-600 shrink-0 font-bold text-sm">🏡</span>
+                          <div>
+                            <p className="font-semibold text-gray-700">
+                              <strong>Cabin Meeting Clause:</strong> Kindly meet the doctor in the cabin only.
+                            </p>
+                            <span className="text-red-705 font-bold uppercase text-[9px] tracking-wide inline-block bg-red-50 text-red-700 px-2 py-0.5 mt-0.5 rounded-md border border-red-155">
+                              Meeting the doctor in the passage / staircase / parking is strictly not allowed.
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="py-3 flex items-start gap-2.5 text-xs">
+                          <span className="text-amber-650 shrink-0 font-bold text-sm">📞</span>
+                          <p className="font-semibold text-gray-700 leading-normal">
+                            <strong>Emergency Roster Threshold:</strong> Call the doctor in the emergency situation only, <span className="text-amber-805 font-extrabold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded">no unnecessary phone calls please.</span>
+                          </p>
+                        </div>
+
+                        <div className="py-3 flex items-start gap-2.5 text-xs">
+                          <span className="text-emerald-500 shrink-0 font-bold text-sm">💬</span>
+                          <p className="font-semibold text-gray-700 leading-normal">
+                            <strong>WhatsApp Communication Etiquette:</strong> Don't send unnecessary WhatsApp messages like Good Morning, Good Night etc.
+                          </p>
+                        </div>
+
+                        <div className="py-3 flex items-start gap-2.5 text-xs">
+                          <span className="text-purple-650 shrink-0 font-bold text-sm">🧘</span>
+                          <p className="font-semibold text-gray-700 leading-normal">
+                            <strong>Work-Life Balance Alignment:</strong> Kindly respect doctors' privacy, personal life and help them to reduce stress.
+                          </p>
+                        </div>
+
+                        <div className="py-3 flex items-start gap-2.5 text-xs">
+                          <span className="text-slate-500 shrink-0 font-bold text-sm">🕒</span>
+                          <p className="font-semibold text-gray-700 leading-normal">
+                            <strong>Prerequisite Waiting Clock:</strong> Please be seated in the waiting area just 15 minutes before the call.
+                          </p>
+                        </div>
+
+                        <div className="py-3 flex items-start gap-2.5 text-xs">
+                          <span className="text-blue-700 shrink-0 font-bold text-sm">👵</span>
+                          <p className="font-semibold text-gray-700 leading-normal">
+                            <strong>Senior Professional Priority:</strong> Take prior appointment if you are senior and want to meet the doctor.
+                          </p>
+                        </div>
+
+                        <div className="pt-3 flex flex-col md:flex-row gap-2 justify-between items-center text-[10px] font-extrabold text-teal-800 bg-teal-50/50 p-2.5 rounded-lg border border-teal-100">
+                          <span className="flex items-center gap-1">🤝 Together we will make a healthy society and will serve the humanity.</span>
+                          <span className="flex items-center gap-1">🏡 Take care of yourself and your family.</span>
+                        </div>
+
+                      </div>
+                    </div>
+
+                    {/* Official Marathi Roster board guidelines and footer indices */}
+                    <div className="border border-dashed border-gray-200 bg-gray-50 p-4 rounded-xl space-y-3 text-[10.5px] text-gray-600 font-semibold shadow-3xs">
+                      <p className="font-black text-slate-800 uppercase tracking-widest text-[9px] flex items-center gap-1">
+                        📢 OFFICIAL DESK NOTICE BOARD / नियमावली
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-slate-800 font-black flex items-center gap-1 text-[11px]">
+                            🏥 OPD TIMINGS / ओपीडी वेळ:
+                          </p>
+                          <div className="bg-white p-2 border border-gray-150 rounded-lg pl-3">
+                            <p className="text-teal-900 text-xs font-black">सकाळी १० ते २ • संध्या. ५ ते ९</p>
+                            <p className="text-gray-400 text-[10px] font-bold mt-0.5">(Morning 10:00 AM to 2:00 PM • Evening 5:00 PM to 9:00 PM)</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <p className="text-slate-800 font-black flex items-center gap-1 text-[11px]">
+                            📝 REQUIRED COUNTER STEPS:
+                          </p>
+                          <div className="bg-white p-2 border border-gray-150 rounded-lg pl-3 space-y-1">
+                            <p className="text-slate-800 font-bold">• कृपया येण्यापूर्वी नाव नोंदणी करावी। <span className="text-gray-400 font-semibold">(Prior registration is mandatory)</span></p>
+                            <p className="text-slate-800 font-bold">• परत येताना हा कागद सोबत आणावा। <span className="text-gray-400 font-semibold">(Please bring this receipt card when returning)</span></p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-250 flex flex-col sm:flex-row justify-between text-[10px] text-gray-400 gap-2 font-bold select-all">
+                        <p>Hospital Helpline Desk: 0240-2451055, 8329573283</p>
+                        <p>Official Escalation Roster: gajananhospitalicu@gmail.com</p>
+                      </div>
                     </div>
                   </motion.div>
                 )}
