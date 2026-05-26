@@ -243,24 +243,28 @@ export function MedicalRep() {
     }
   }, [mrDoctor]);
 
-  const defaultMrBookings = [
-    { name: "Rohan Khanna", company: "Cipla Ltd", doctor: "Dr. Gitesh Dalvi", date: "Tue, May 26, 2026", time: "1:30 PM - 2:00 PM", product: "Inhaler Tech / Monotherapy", status: "Fixed & Confirmed", code: "MR-GAJ-8371" },
-    { name: "Priya Sharma", company: "Sun Pharmaceutical", doctor: "Dr. Sachin Suryawanshi", date: "Fri, May 29, 2026", time: "3:00 PM - 3:30 PM", product: "Anti-diabetic formulations", status: "Fixed & Confirmed", code: "MR-GAJ-4251" },
-    { name: "Amit Joshi", company: "Dr. Reddy's Lab", doctor: "Dr. Vijay Walture", date: "Fri, May 29, 2026", time: "2:30 PM - 3:00 PM", product: "Cardiovascular Beta-Blockers", status: "Fixed & Confirmed", code: "MR-GAJ-9134" },
-    { name: "Snehal Sinde", company: "Lupin Pharmaceuticals", doctor: "Dr. Sachin Patil", date: "Thu, Jun 4, 2026", time: "3:00 PM - 3:30 PM", product: "Osteoarthritis Joint Supplements", status: "Fixed & Confirmed", code: "MR-GAJ-1082" }
-  ];
+  const defaultMrBookings: any[] = [];
 
   useEffect(() => {
+    // Force a one-time wipe of old demo data/bookings to ensure a fresh start
+    const isWiped = localStorage.getItem("gajanan_mr_bookings_wiped_v3");
+    if (!isWiped) {
+      localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
+      localStorage.setItem("gajanan_mr_bookings_wiped_v3", "true");
+      setMrBookings([]);
+      return;
+    }
+
     const stored = localStorage.getItem("gajanan_mr_bookings");
     if (stored) {
       try {
         setMrBookings(JSON.parse(stored));
       } catch (e) {
-        setMrBookings(defaultMrBookings);
+        setMrBookings([]);
       }
     } else {
-      localStorage.setItem("gajanan_mr_bookings", JSON.stringify(defaultMrBookings));
-      setMrBookings(defaultMrBookings);
+      localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
+      setMrBookings([]);
     }
   }, []);
 
