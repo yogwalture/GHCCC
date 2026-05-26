@@ -131,19 +131,31 @@ export function MedicalRep() {
   ];
 
   const getCallStartTime = (timeSlot: string): { hour: number; minute: number } => {
-    if (!timeSlot || timeSlot === "Special Request Slot") {
+    if (!timeSlot || timeSlot === "Special Request Slot" || timeSlot === "Prior Appointment") {
       return { hour: 17, minute: 0 };
     }
     try {
       // e.g. "1:30 PM - 2:00 PM"
       const startPart = timeSlot.split("-")[0].trim(); // "1:30 PM"
-      const [timeStr, ampm] = startPart.split(" "); // ["1:30", "PM"]
-      let [hourStr, minStr] = timeStr.split(":"); // ["1", "30"]
-      let hour = parseInt(hourStr, 10);
-      const minute = parseInt(minStr, 10);
-      if (ampm.toUpperCase() === "PM" && hour !== 12) {
+      const parts = startPart.split(" ");
+      if (parts.length < 2) {
+        return { hour: 13, minute: 30 };
+      }
+      const timeStr = parts[0];
+      const ampm = parts[1];
+      if (!timeStr || !ampm) {
+        return { hour: 13, minute: 30 };
+      }
+      const timeParts = timeStr.split(":");
+      if (timeParts.length < 2) {
+        return { hour: 13, minute: 30 };
+      }
+      let hour = parseInt(timeParts[0], 10);
+      const minute = parseInt(timeParts[1], 10);
+      const isPM = ampm.toUpperCase() === "PM";
+      if (isPM && hour !== 12) {
         hour += 12;
-      } else if (ampm.toUpperCase() === "AM" && hour === 12) {
+      } else if (!isPM && hour === 12) {
         hour = 0;
       }
       return { hour, minute };
@@ -252,19 +264,18 @@ export function MedicalRep() {
       localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
       localStorage.setItem("gajanan_mr_bookings_wiped_v3", "true");
       setMrBookings([]);
-      return;
-    }
-
-    const stored = localStorage.getItem("gajanan_mr_bookings");
-    if (stored) {
-      try {
-        setMrBookings(JSON.parse(stored));
-      } catch (e) {
+    } else {
+      const stored = localStorage.getItem("gajanan_mr_bookings");
+      if (stored) {
+        try {
+          setMrBookings(JSON.parse(stored));
+        } catch (e) {
+          setMrBookings([]);
+        }
+      } else {
+        localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
         setMrBookings([]);
       }
-    } else {
-      localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
-      setMrBookings([]);
     }
   }, []);
 
