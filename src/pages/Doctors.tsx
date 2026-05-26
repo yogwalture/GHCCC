@@ -79,6 +79,7 @@ export function Doctors() {
     { name: "Dr. Manoj Toshniwal", specialty: "Haematology", qualifications: "MBBS, MD, DM (Haematology-Onchologist)" },
     { name: "Dr. Sachin Soni", specialty: "Nephrology", qualifications: "MBBS, MD, DNB, (Nephrology)" },
     { name: "Dr. Shreeganesh Barnela", specialty: "Nephrology", qualifications: "MBBS, MD, DNB, (Nephrology)" },
+    { name: "Dr. Rahul Ruikar", specialty: "Nephrology", qualifications: "MBBS, DNB Medicine, DNB Nephrology, Kidney disease specialist" },
     { name: "Dr. Pankaj Golegavkar", specialty: "Skin & Hair Transplant", qualifications: "MBBS, DVD (Skin)" },
     { name: "Dr. Alka Kotecha", specialty: "Skin & Hair Transplant", qualifications: "MBBS, MD (Skin & VD)" },
     { name: "Dr. Parsi Jilla", specialty: "Cardiology", qualifications: "MBBS, MD, (Med.) Cardiologist" },

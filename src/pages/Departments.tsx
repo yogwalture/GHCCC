@@ -106,9 +106,10 @@ export function Departments() {
       services: ["Hemodialysis", "Kidney Disease Management", "Renal Failure Treatment", "Hypertension Control"],
       advancedProcedures: [
         { name: "Continuous Ambulatory Peritoneal Dialysis (CAPD)", specialist: "Dr. Sachin Soni" },
-        { name: "Pre-transplant Renal Evaluation", specialist: "Dr. Shreeganesh Barnela" }
+        { name: "Pre-transplant Renal Evaluation", specialist: "Dr. Shreeganesh Barnela" },
+        { name: "Kidney Disease Treatment & Nephropathy OPD", specialist: "Dr. Rahul Ruikar" }
       ],
-      leadDoctor: "Dr. Sachin Soni, Dr. Shreeganesh Barnela"
+      leadDoctor: "Dr. Sachin Soni, Dr. Shreeganesh Barnela, Dr. Rahul Ruikar"
     },
     { 
       name: "ENT (Otorhinolaryngology)", 

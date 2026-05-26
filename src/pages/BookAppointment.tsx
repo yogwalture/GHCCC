@@ -7,6 +7,7 @@ const directors = [
   { id: "dr-vijay", name: "Dr. Vijay Walture", spec: "Physician Diabetologist & Intensivist" },
   { id: "dr-sachin", name: "Dr. Sachin Suryawanshi", spec: "Physician Diabetologist & Intensivist" },
   { id: "dr-sachin-patil", name: "Dr. Sachin Patil", spec: "Orthopaedic & Joint Replacement Surgeon" },
+  { id: "dr-rahul-ruikar", name: "Dr. Rahul Ruikar", spec: "Nephrology / Kidney Specialist (OPD 5:00 PM - 7:00 PM)" },
   { id: "dr-dilip", name: "Dr. Dilip Thombre", spec: "Physician Cardiologist, Diabetologist & Intensivist" },
   { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", spec: "Consultant Physician & Intensivist" },
 ];
