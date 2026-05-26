@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import { TiltCard } from "../components/ui/TiltCard";
+import QRCode from "qrcode";
 
 interface QuickScanQRProps {
   url: string;
@@ -71,14 +72,17 @@ function QuickScanQR({ url, label, title = "Smart Quick Scan QR", phoneNumber = 
             animate={{ opacity: 1, scale: 1 }}
             className="pt-2 flex flex-col items-center space-y-2"
           >
-            <div className="relative p-2.5 bg-white border border-teal-500/20 rounded-2xl shadow-sm group">
+            <div className="relative p-2.5 bg-white border border-teal-500/25 rounded-2xl shadow-sm group transition-all duration-300 hover:shadow-md">
+              {/* Subtle outer pulsing active border to highlight interactivity */}
+              <div className="absolute -inset-0.5 rounded-[18px] border border-teal-500/40 animate-pulse pointer-events-none" />
+
               <img 
                 src={qrUrl} 
                 alt="WhatsApp QR Code Link" 
                 referrerPolicy="no-referrer"
-                className="w-32 h-32 rounded-lg select-none transition-transform group-hover:scale-[1.03] duration-300 ease-out"
+                className="w-32 h-32 rounded-lg select-none transition-transform group-hover:scale-[1.03] duration-300 ease-out relative z-10"
               />
-              <div className="absolute left-2.5 right-2.5 top-2.5 h-0.5 bg-teal-400 opacity-60 rounded shadow-md animate-bounce" style={{ animationDuration: '3.6s' }} />
+              <div className="absolute left-2.5 right-2.5 top-2.5 h-0.5 bg-teal-400 opacity-60 rounded shadow-md animate-bounce z-10" style={{ animationDuration: '3.6s' }} />
             </div>
 
             <div className="space-y-0.5">
@@ -120,6 +124,32 @@ export function MedicalRep() {
   const [awaitingConfirm, setAwaitingConfirm] = useState<any | null>(null);
   const [bookingSuccessCode, setBookingSuccessCode] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState("");
+  const [portalQrUrl, setPortalQrUrl] = useState<string>("");
+
+  useEffect(() => {
+    const portalUrl = "https://gajananhospitalccc.com/medical-rep";
+    QRCode.toDataURL(portalUrl, {
+      width: 600,
+      margin: 2,
+      errorCorrectionLevel: "H"
+    })
+      .then(url => {
+        setPortalQrUrl(url);
+      })
+      .catch(err => {
+        console.error("Failed to generate Portal QR", err);
+      });
+  }, []);
+
+  const handleDownloadPortalQR = () => {
+    if (!portalQrUrl) return;
+    const link = document.createElement("a");
+    link.href = portalQrUrl;
+    link.download = "Gajanan_Hospital_MR_Portal_QR.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const mrDoctors = [
     { id: "dr-gitesh", name: "Dr. Gitesh Dalvi", desc: "Director - Medicine & Critical Care", schedule: "Tuesdays (1:30 PM to 2:00 PM)", timeSlot: "1:30 PM - 2:00 PM", callDay: "Tuesday" },
@@ -565,6 +595,60 @@ export function MedicalRep() {
                   <RefreshCw className="h-2.5 w-2.5 animate-spin" style={{ animationDuration: '6s' }} />
                   Reset Slots (Demo Toggle)
                 </button>
+              )}
+            </div>
+
+            {/* Downloadable QR Code Card for MR Portal */}
+            <div id="mr-portal-qr-downloader-card" className="bg-white p-6 rounded-2xl shadow-sm border border-gray-150/80 text-center space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <QrCode className="h-4.5 w-4.5 text-teal-600 animate-pulse" />
+                  MR Portal Access Code
+                </span>
+                <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-teal-50 text-teal-800">
+                  Scan To Open
+                </span>
+              </div>
+
+              <p className="text-xs font-semibold text-gray-500 leading-normal max-w-xs mx-auto">
+                Medical representatives can scan this code with their smartphone camera to directly access this booking portal and schedule slots.
+              </p>
+
+              {portalQrUrl ? (
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="p-3 bg-gradient-to-tr from-teal-50 to-blue-50 border border-teal-500/10 rounded-2xl shadow-inner relative group">
+                    <img 
+                      src={portalQrUrl} 
+                      alt="Gajanan Hospital MR Portal QR" 
+                      className="w-36 h-36 rounded-xl shadow-xs select-none bg-white p-2 transition-all duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-2 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="bg-teal-900 border border-teal-700/50 text-white text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-md shadow-lg select-none">
+                        SCAN ME
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full pt-1">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPortalQR}
+                      className="w-full py-2.5 bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                    >
+                      <Download className="h-4 w-4 shrink-0 animate-bounce" style={{ animationDuration: '3s' }} />
+                      Download QR Code
+                    </button>
+                  </div>
+                  
+                  <p className="text-[9px] text-gray-400 font-semibold truncate max-w-full" title="https://gajananhospitalccc.com/medical-rep">
+                    Link: <span className="font-mono text-teal-700">gajananhospitalccc.com/medical-rep</span>
+                  </p>
+                </div>
+              ) : (
+                <div className="py-8 flex flex-col items-center justify-center space-y-2">
+                  <RefreshCw className="h-5 w-5 text-teal-600 animate-spin" />
+                  <span className="text-[10px] font-bold text-gray-400">Generating portal QR...</span>
+                </div>
               )}
             </div>
           </div>
