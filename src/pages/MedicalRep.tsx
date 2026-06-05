@@ -248,8 +248,15 @@ export function MedicalRep() {
         // Starts exactly 1 day before at 8:00 AM
         const bookingOpenTime = new Date(temp.getFullYear(), temp.getMonth(), temp.getDate() - 1, 8, 0, 0, 0);
 
-        let status: "OPEN" | "LOCKED" | "EXPIRED" = "OPEN";
-        if (now.getTime() < bookingOpenTime.getTime()) {
+        // Check if this date/doctor combo has already been booked by any representative
+        const isAlreadyBooked = mrBookings.some(
+          (b) => b.doctor === docObj.name && b.date === readable
+        );
+
+        let status: "OPEN" | "LOCKED" | "EXPIRED" | "BOOKED" = "OPEN";
+        if (isAlreadyBooked) {
+          status = "BOOKED";
+        } else if (now.getTime() < bookingOpenTime.getTime()) {
           status = "LOCKED";
         } else if (now.getTime() >= callStartTime.getTime()) {
           status = "EXPIRED";
@@ -306,25 +313,55 @@ export function MedicalRep() {
   const defaultMrBookings: any[] = [];
 
   useEffect(() => {
-    // Force a one-time wipe of old demo data/bookings to ensure a fresh start
-    const isWiped = localStorage.getItem("gajanan_mr_bookings_wiped_v3");
-    if (!isWiped) {
-      localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
-      localStorage.setItem("gajanan_mr_bookings_wiped_v3", "true");
-      setMrBookings([]);
-    } else {
+    // Sync with server database and local storage backup to preserve all past data
+    const fetchAndSyncMRBookings = async () => {
+      let serverBookings: any[] = [];
+      try {
+        const res = await fetch("/api/mr-bookings");
+        if (res.ok) {
+          serverBookings = await res.json();
+        }
+      } catch (err) {
+        console.error("Failed to fetch MR bookings from database:", err);
+      }
+
       const stored = localStorage.getItem("gajanan_mr_bookings");
+      let localBookings: any[] = [];
       if (stored) {
         try {
-          setMrBookings(JSON.parse(stored));
+          localBookings = JSON.parse(stored);
         } catch (e) {
-          setMrBookings([]);
+          localBookings = [];
         }
-      } else {
-        localStorage.setItem("gajanan_mr_bookings", JSON.stringify([]));
-        setMrBookings([]);
       }
-    }
+
+      // Merge local and server bookings by code to prevent erasure of past listings
+      const merged = [...serverBookings];
+      localBookings.forEach((local) => {
+        const exists = merged.some((serv) => serv.code === local.code);
+        if (!exists) {
+          merged.push(local);
+        }
+      });
+
+      setMrBookings(merged);
+      localStorage.setItem("gajanan_mr_bookings", JSON.stringify(merged));
+
+      // Synchronize back if merged array has elements not yet in the DB
+      if (merged.length > serverBookings.length) {
+        try {
+          await fetch("/api/mr-bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(merged),
+          });
+        } catch (err) {
+          console.error("Failed to sync merged MR bookings to server database:", err);
+        }
+      }
+    };
+
+    fetchAndSyncMRBookings();
   }, []);
 
   const handleMRRequest = (e: React.FormEvent) => {
@@ -345,6 +382,8 @@ export function MedicalRep() {
     if (selectedDateObj && selectedDateObj.status !== "OPEN") {
       if (selectedDateObj.status === "LOCKED") {
         setBookingError(`Appointments can only be booked from 1 day prior starting at 8:00 AM. Booking for this slot opens on ${selectedDateObj.priorReadable}.`);
+      } else if (selectedDateObj.status === "BOOKED") {
+        setBookingError("This slot has already been booked. Please pick a different date or different doctor.");
       } else {
         setBookingError(`This booking window has closed. The call timing (${selectedDateObj.callTimeReadable}) for this date has already passed.`);
       }
@@ -377,7 +416,7 @@ export function MedicalRep() {
     window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encoded}`, "_blank");
   };
 
-  const finalizeMRBooking = () => {
+  const finalizeMRBooking = async () => {
     if (!awaitingConfirm) return;
 
     const newBooking = {
@@ -388,6 +427,17 @@ export function MedicalRep() {
     const updatedBookings = [...mrBookings, newBooking];
     setMrBookings(updatedBookings);
     localStorage.setItem("gajanan_mr_bookings", JSON.stringify(updatedBookings));
+
+    // Save to server-side file persistent database
+    try {
+      await fetch("/api/mr-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedBookings),
+      });
+    } catch (err) {
+      console.error("Failed to write MR booking to server database:", err);
+    }
 
     setBookingSuccessCode(awaitingConfirm.code);
     setAwaitingConfirm(null);
@@ -988,14 +1038,14 @@ export function MedicalRep() {
                                 <>
                                   <option value="">-- Select Available Date --</option>
                                   {getFilteredDatesWithStatus(mrDoctor).map(d => (
-                                    <option key={d.iso} value={d.readable}>
-                                      {d.readable} {d.status === "OPEN" ? "★ (Active Roster - Booking Open!)" : d.status === "LOCKED" ? `(Locked - Opens at 8:00 AM on 1 day prior)` : `(Closed - Call Time Passed)`}
+                                    <option key={d.iso} value={d.readable} disabled={d.status !== "OPEN"}>
+                                      {d.readable} {d.status === "OPEN" ? "★ (Active Roster - Booking Open!)" : d.status === "BOOKED" ? `(Booked - Slot Full)` : d.status === "LOCKED" ? `(Locked - Opens at 8:00 AM on 1 day prior)` : `(Closed - Call Time Passed)`}
                                     </option>
                                   ))}
                                 </>
                               )}
                             </select>
-
+ 
                             {/* Alert messages for the 1-day prior constraint */}
                             {mrDoctor && (
                               <div className="mt-2 text-[10px] leading-relaxed">
@@ -1019,6 +1069,20 @@ export function MedicalRep() {
                                           <div>
                                             <p className="font-bold uppercase text-[9px] tracking-wider text-emerald-850">Roster Window Active ✓</p>
                                             <p className="text-gray-650 font-sans">Booking is open and active! Slots are available and booking remains open until the call starts ({selectedDateObj.callTimeReadable}).</p>
+                                          </div>
+                                        </div>
+                                      );
+                                    } else if (selectedDateObj.status === "BOOKED") {
+                                      return (
+                                        <div className="p-2.5 bg-rose-50 text-rose-950 border border-rose-200 rounded-lg font-semibold flex flex-col gap-1.5 shadow-xs">
+                                          <div className="flex items-start gap-1.5">
+                                            <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
+                                            <div>
+                                              <p className="font-bold uppercase text-[9px] tracking-wider text-rose-900">Roster Slot Full (Booked)</p>
+                                              <p className="text-gray-650 font-medium font-sans">
+                                                This roster slot has already been locked and reserved by another Medical Representative.
+                                              </p>
+                                            </div>
                                           </div>
                                         </div>
                                       );
@@ -1046,7 +1110,7 @@ export function MedicalRep() {
                                             <AlertCircle className="h-3.5 w-3.5 text-rose-500 shrink-0 mt-0.5" />
                                             <div>
                                               <p className="font-bold uppercase text-[9px] tracking-wider text-rose-900">Roster Closed (Passed)</p>
-                                              <p className="text-gray-650 font-medium">The call timing ({selectedDateObj.callTimeReadable}) for this date has already passed. Please select another date.</p>
+                                              <p className="text-gray-650 font-medium col-span-3">The call timing ({selectedDateObj.callTimeReadable}) for this date has already passed. Please select another date.</p>
                                             </div>
                                           </div>
                                         </div>
@@ -1166,26 +1230,52 @@ export function MedicalRep() {
                         </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {mrDoctors.map((doc, idx) => (
-                          <div key={doc.id} className="p-3 bg-teal-50/20 border border-teal-100/40 rounded-xl flex items-start gap-2.5">
-                            <span className="bg-teal-600 text-white font-black h-5 w-5 rounded-md flex items-center justify-center text-[10px] shrink-0 mt-0.5">
-                              {idx + 1}
-                            </span>
-                            <div className="space-y-0.5">
-                              <p className="font-extrabold text-slate-900 text-xs">{doc.name.toUpperCase()}</p>
-                              <p className="text-gray-400 text-[10px] font-semibold">{doc.desc}</p>
-                              <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
-                                <span className="bg-teal-50 text-teal-850 border border-teal-100 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">
-                                  {doc.callDay}
-                                </span>
-                                <span className="text-[10px] text-gray-600 font-extrabold flex items-center gap-0.5">
-                                  <Clock className="w-3 h-3 text-teal-600" />
-                                  {doc.schedule.split("(")[1]?.replace(")", "") || doc.timeSlot}
-                                </span>
+                        {mrDoctors.map((doc, idx) => {
+                          const doctorBookings = mrBookings.filter(b => b.doctor === doc.name);
+                          return (
+                            <div key={doc.id} className="p-3 bg-teal-50/20 border border-teal-100/40 rounded-xl flex items-start gap-2.5 flex-wrap md:flex-nowrap font-sans">
+                              <span className="bg-teal-600 text-white font-black h-5 w-5 rounded-md flex items-center justify-center text-[10px] shrink-0 mt-0.5">
+                                 {idx + 1}
+                              </span>
+                              <div className="space-y-0.5 flex-1 min-w-0">
+                                <p className="font-extrabold text-slate-900 text-xs">{doc.name.toUpperCase()}</p>
+                                <p className="text-gray-400 text-[10px] font-semibold">{doc.desc}</p>
+                                <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
+                                  <span className="bg-teal-50 text-teal-850 border border-teal-100 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">
+                                    {doc.callDay}
+                                  </span>
+                                  <span className="text-[10px] text-gray-600 font-extrabold flex items-center gap-0.5">
+                                    <Clock className="w-3 h-3 text-teal-600" />
+                                    {doc.schedule.split("(")[1]?.replace(")", "") || doc.timeSlot}
+                                  </span>
+                                </div>
+
+                                {doctorBookings.length > 0 && (
+                                  <div className="mt-3 pt-2.5 border-t border-teal-100/40 space-y-1.5 w-full">
+                                    <p className="text-[8.5px] font-black text-teal-900 uppercase tracking-wider flex items-center gap-1">
+                                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                      Booked Reps ({doctorBookings.length}):
+                                    </p>
+                                    <div className="space-y-1 max-h-[140px] overflow-y-auto pr-1 scrollbar-thin">
+                                      {doctorBookings.map((b, bIdx) => (
+                                        <div key={bIdx} className="bg-white/95 border border-teal-100/50 p-1.5 rounded-lg text-[9.5px] font-semibold flex items-center justify-between shadow-3xs">
+                                          <div className="flex flex-col min-w-0">
+                                            <span className="text-slate-900 font-black truncate">{b.name}</span>
+                                            <span className="text-[8px] text-slate-500 uppercase font-bold truncate">{b.company} ({b.product})</span>
+                                          </div>
+                                          <div className="text-right flex flex-col shrink-0 items-end ml-2">
+                                            <span className="text-teal-950 font-black">{b.date.split(",")[1]?.trim()}</span>
+                                            <span className="text-[7.5px] text-teal-850 font-bold bg-teal-50/80 px-1 rounded-md">{b.time.split(" - ")[0]}</span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
 

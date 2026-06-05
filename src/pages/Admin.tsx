@@ -114,20 +114,77 @@ export function Admin() {
     return clean;
   };
 
-  // Sync to local storage
+  // Sync to database and local storage
   useEffect(() => {
-    const stored = localStorage.getItem("gajanan_patient_appointments");
-    if (stored) {
-      setAppointments(JSON.parse(stored));
-    } else {
-      localStorage.setItem("gajanan_patient_appointments", JSON.stringify(defaultPatients));
-      setAppointments(defaultPatients);
-    }
+    const fetchAndSyncAppointments = async () => {
+      let serverAppointments: any[] = [];
+      try {
+        const res = await fetch("/api/patient-appointments");
+        if (res.ok) {
+          serverAppointments = await res.json();
+        }
+      } catch (err) {
+        console.error("Failed to fetch patient appointments:", err);
+      }
+
+      const stored = localStorage.getItem("gajanan_patient_appointments");
+      let localAppointments: any[] = [];
+      if (stored) {
+        try {
+          localAppointments = JSON.parse(stored);
+        } catch (e) {
+          localAppointments = [];
+        }
+      } else {
+        localAppointments = defaultPatients;
+      }
+
+      // Merge arrays based on key uniqueness
+      const merged = [...serverAppointments];
+      localAppointments.forEach((local) => {
+        const exists = merged.some((serv) => serv.id === local.id);
+        if (!exists) {
+          merged.push(local);
+        }
+      });
+
+      // If both were completely empty, fallback to defaultPatients
+      if (merged.length === 0) {
+        merged.push(...defaultPatients);
+      }
+
+      setAppointments(merged);
+      localStorage.setItem("gajanan_patient_appointments", JSON.stringify(merged));
+
+      // Push back to server DB if merged is larger than server list
+      if (merged.length > serverAppointments.length) {
+        try {
+          await fetch("/api/patient-appointments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(merged),
+          });
+        } catch (err) {
+          console.error("Failed to sync merged appointments to backend database:", err);
+        }
+      }
+    };
+
+    fetchAndSyncAppointments();
   }, []);
 
-  const saveAppointments = (updated: any[]) => {
+  const saveAppointments = async (updated: any[]) => {
     setAppointments(updated);
     localStorage.setItem("gajanan_patient_appointments", JSON.stringify(updated));
+    try {
+      await fetch("/api/patient-appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.error("Failed to save appointments to server database:", err);
+    }
   };
 
   // Toast notifier

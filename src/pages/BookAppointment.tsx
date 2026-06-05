@@ -20,7 +20,7 @@ export function BookAppointment() {
   const [reason, setReason] = useState("");
   const [isSent, setIsSent] = useState(false);
 
-  const handleWhatsAppBooking = (e: React.FormEvent) => {
+  const handleWhatsAppBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !doctor || !phone) return;
 
@@ -33,7 +33,7 @@ export function BookAppointment() {
     // Redirect to WhatsApp
     window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encodedMessage}`, "_blank");
     
-    // Save to localStorage so admin can see it and manage feedback
+    // Save to server database + localStorage so admin can see it and manage feedback
     try {
       const existing = localStorage.getItem("gajanan_patient_appointments");
       const list = existing ? JSON.parse(existing) : [];
@@ -51,7 +51,28 @@ export function BookAppointment() {
         feedbackScheduledTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
         feedbackTriggered: false
       };
-      localStorage.setItem("gajanan_patient_appointments", JSON.stringify([newAppt, ...list]));
+      const updatedList = [newAppt, ...list];
+      localStorage.setItem("gajanan_patient_appointments", JSON.stringify(updatedList));
+
+      // Sync to database
+      try {
+        const res = await fetch("/api/patient-appointments");
+        let serverList = [];
+        if (res.ok) {
+          serverList = await res.json();
+        }
+        const mergedList = [newAppt, ...serverList];
+        // Ensure uniqueness by ID
+        const uniqueMerged = Array.from(new Map(mergedList.map(item => [item.id, item])).values());
+
+        await fetch("/api/patient-appointments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(uniqueMerged),
+        });
+      } catch (err) {
+        console.error("Failed to sync new patient appointment with database:", err);
+      }
     } catch (e) {
       console.error("Local storage error:", e);
     }
