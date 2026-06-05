@@ -20,7 +20,9 @@ import {
   Save,
   Plus,
   Trash2,
-  Download
+  Download,
+  Briefcase,
+  Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
@@ -87,6 +89,15 @@ const defaultPatients = [
 ];
 
 export function Admin() {
+  const [adminEmail, setAdminEmail] = useState<string | null>(() => localStorage.getItem("gajanan_admin_email"));
+  const [loginStep, setLoginStep] = useState<"choose" | "enter" | "authenticating">("choose");
+  const [inputEmail, setInputEmail] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const [mrBookings, setMrBookings] = useState<any[]>([]);
+  const [mrSearchQuery, setMrSearchQuery] = useState("");
+  const [mrDoctorFilter, setMrDoctorFilter] = useState("all");
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [appointments, setAppointments] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,6 +183,41 @@ export function Admin() {
 
     fetchAndSyncAppointments();
   }, []);
+
+  // Sync MR bookings list from server-side persistent database when tab is selected
+  useEffect(() => {
+    const fetchMrBookingsData = async () => {
+      try {
+        const res = await fetch("/api/mr-bookings");
+        if (res.ok) {
+          const data = await res.json();
+          setMrBookings(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch MR bookings in admin:", err);
+      }
+    };
+    if (adminEmail === "yogwalture@gmail.com") {
+      fetchMrBookingsData();
+    }
+  }, [activeTab, adminEmail]);
+
+  // Handler to delete/cancel MR bookings
+  const handleDeleteMrBooking = async (code: string) => {
+    const updated = mrBookings.filter((b) => b.code !== code);
+    setMrBookings(updated);
+    localStorage.setItem("gajanan_mr_bookings", JSON.stringify(updated));
+    try {
+      await fetch("/api/mr-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+      triggerToast("Representative meeting slot canceled successfully.");
+    } catch (err) {
+      console.error("Failed to sync deleted MR booking:", err);
+    }
+  };
 
   const saveAppointments = async (updated: any[]) => {
     setAppointments(updated);
@@ -354,6 +400,210 @@ export function Admin() {
   const triggeredCount = appointments.filter(a => a.feedbackTriggered).length;
   const rateLimitResponsePercent = totalCount > 0 ? Math.round((triggeredCount / totalCount) * 100) : 0;
 
+  if (adminEmail !== "yogwalture@gmail.com") {
+    const handleGoogleChoose = (email: string) => {
+      setLoginStep("authenticating");
+      setErrorMsg("");
+      setTimeout(() => {
+        if (email === "yogwalture@gmail.com") {
+          localStorage.setItem("gajanan_admin_email", "yogwalture@gmail.com");
+          setAdminEmail("yogwalture@gmail.com");
+        } else {
+          setLoginStep("choose");
+          setErrorMsg("Access Denied. Only yogwalture@gmail.com is authorized to enter this dashboard.");
+        }
+      }, 1500);
+    };
+
+    const handleFormSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!inputEmail) return;
+      
+      const trimmed = inputEmail.trim().toLowerCase();
+      setLoginStep("authenticating");
+      setErrorMsg("");
+      setTimeout(() => {
+        if (trimmed === "yogwalture@gmail.com") {
+          localStorage.setItem("gajanan_admin_email", "yogwalture@gmail.com");
+          setAdminEmail("yogwalture@gmail.com");
+        } else {
+          setLoginStep("enter");
+          setErrorMsg("Access Denied. Only yogwalture@gmail.com is registered as an administrator.");
+        }
+      }, 1500);
+    };
+
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans antialiased text-gray-950 border-t-[5px] border-t-blue-900">
+        <Link to="/" className="absolute top-6 left-6 inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-950 transition-colors">
+          &larr; Back to Hospital Front
+        </Link>
+        
+        <div className="w-full max-w-[420px] bg-white rounded-2xl shadow-xl border border-gray-200/80 p-8 space-y-6 relative overflow-hidden transition-all duration-300">
+          
+          {/* Top Google G logo */}
+          <div className="flex flex-col items-center text-center space-y-4">
+            <svg className="h-10 w-10 select-none animate-pulse" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style={{ animationDuration: '3.6s' }}>
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold tracking-tight text-gray-900">Sign in with Google</h2>
+              <p className="text-xs text-gray-500 font-medium">to continue to Gajanan Hospital Clinical Portal</p>
+            </div>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {loginStep === "choose" && (
+              <motion.div
+                key="choose"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="space-y-4 font-sans"
+              >
+                {/* Error Banner if any */}
+                {errorMsg && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 font-medium">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="border border-gray-150 rounded-xl divide-y divide-gray-150 overflow-hidden bg-white">
+                    
+                    {/* Authorized Account option */}
+                    <button
+                      type="button"
+                      onClick={() => handleGoogleChoose("yogwalture@gmail.com")}
+                      className="w-full text-left p-3.5 hover:bg-slate-50 transition-colors flex items-center justify-between cursor-pointer focus:outline-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 bg-blue-600 text-white font-bold text-sm tracking-wide uppercase rounded-full flex items-center justify-center shadow-xs">
+                          YW
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-950 truncate">Yogesh Walture (Admin)</p>
+                          <p className="text-[11px] text-gray-500 truncate">yogwalture@gmail.com</p>
+                        </div>
+                      </div>
+                      <span className="text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-100 font-extrabold px-1.5 py-0.5 rounded-full tracking-wider uppercase">Verified Admin</span>
+                    </button>
+
+                    {/* Another account option */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginStep("enter");
+                        setErrorMsg("");
+                      }}
+                      className="w-full text-left p-3.5 hover:bg-slate-50 transition-colors flex items-center gap-3 cursor-pointer focus:outline-none"
+                    >
+                      <div className="h-9 w-9 bg-gray-100 text-gray-500 rounded-full flex items-center justify-center">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-700">Use another Google Account</p>
+                        <p className="text-[10px] text-gray-400">Sign in with a different email</p>
+                      </div>
+                    </button>
+                    
+                  </div>
+                </div>
+
+                <div className="text-[10.5px] text-gray-400 leading-normal text-center pt-2">
+                  Hospital policy restricts unrecognized domains. Google OAuth accounts mapping verified handlers can enter.
+                </div>
+              </motion.div>
+            )}
+
+            {loginStep === "enter" && (
+              <motion.div
+                key="enter"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="space-y-4 font-sans"
+              >
+                {/* Error Banner if any */}
+                {errorMsg && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2 font-medium">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black tracking-wider uppercase text-gray-400">Google Account Email</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. yogwalture@gmail.com"
+                      value={inputEmail}
+                      onChange={(e) => setInputEmail(e.target.value)}
+                      className="w-full text-xs font-medium p-3 border border-gray-200 focus:ring-1 focus:ring-[#128C7E] focus:border-[#128C7E] rounded-lg outline-none bg-slate-50/50 focus:bg-white transition-all"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLoginStep("choose");
+                        setErrorMsg("");
+                      }}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold text-xs py-2.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-grow bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs uppercase tracking-wider py-2.5 rounded-lg transition-all shadow-xs cursor-pointer"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+
+            {loginStep === "authenticating" && (
+              <motion.div
+                key="authenticating"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-12 flex flex-col items-center justify-center text-center space-y-4"
+              >
+                <div className="relative h-12 w-12 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20" />
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600" />
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Secure Sign-On</p>
+                  <p className="text-xs text-gray-600 font-semibold leading-relaxed">Verifying Google user permissions with clinic role database...</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+        </div>
+        
+        {/* Footer info lock indicator */}
+        <div className="mt-8 flex items-center gap-1.5 text-[10.5px] text-gray-400 font-semibold select-none">
+          <Lock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+          <span>Gajanan Admin Security Protocol v3.8</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row font-sans text-gray-800">
       
@@ -395,6 +645,7 @@ export function Admin() {
             { id: "dashboard", label: "Overview Controls", icon: Activity, count: null },
             { id: "appointments", label: "Patients & Queue", icon: Users, count: filteredAppointments.length },
             { id: "feedback", label: "Feedback Campaign", icon: MessageCircle, count: scheduledCount > 0 ? scheduledCount : null },
+            { id: "mr_bookings", label: "MR Portal Bookings", icon: Briefcase, count: mrBookings.length > 0 ? mrBookings.length : null },
           ].map((item) => (
             <button
               key={item.id}
@@ -430,6 +681,17 @@ export function Admin() {
             <LogOut className="h-4 w-4" />
             <span>Return to Site Home</span>
           </Link>
+          <button 
+            type="button"
+            onClick={() => {
+              localStorage.removeItem("gajanan_admin_email");
+              setAdminEmail(null);
+            }}
+            className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-xs font-bold text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors leading-none cursor-pointer border border-dashed border-amber-500/25"
+          >
+            <Lock className="h-3.5 w-3.5" />
+            <span>Sign Out Admin</span>
+          </button>
         </div>
       </aside>
 
@@ -980,6 +1242,218 @@ export function Admin() {
                 </div>
 
               </div>
+            </motion.div>
+          )}
+
+          {/* Active Tab: MEDICAL REPRESENTATIVES BOOKINGS LIST AND ROSTER */}
+          {activeTab === "mr_bookings" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 font-sans text-gray-800">
+              
+              {/* Header section with Stats summary */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-[#128C7E]" />
+                    <span>Medical Representatives Booking Roster</span>
+                  </h2>
+                  <p className="text-xs text-gray-500 font-semibold">
+                    Monitor, search, filter, and purge registered MR sessions and target schedules in real time.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch("/api/mr-bookings");
+                        if (res.ok) {
+                          setMrBookings(await res.json());
+                          triggerToast("Roster synced successfully.");
+                        }
+                      } catch (err) {
+                        triggerToast("Sync failed. Check connection.");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all border border-gray-200 cursor-pointer"
+                  >
+                    <span>Refresh List</span>
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (window.confirm("Are you sure you want to clear ALL Medical Representative bookings? This cannot be undone.")) {
+                        setMrBookings([]);
+                        localStorage.setItem("gajanan_mr_bookings", "[]");
+                        try {
+                          await fetch("/api/mr-bookings", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: "[]"
+                          });
+                          triggerToast("All representative bookings have been wiped.");
+                        } catch (err) {
+                          console.error("Purge fail:", err);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg transition-all border border-rose-100 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Clear All Bookings</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Roster Quick Figures Section */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-xs">
+                  <span className="text-[9.5px] font-black text-gray-400 uppercase tracking-widest block mb-1">Total Reserved Slots</span>
+                  <div className="text-2xl font-black text-gray-950">{mrBookings.length} Bookings</div>
+                  <p className="text-[10px] text-gray-400 font-semibold mt-1">Synced across local database</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-xs">
+                  <span className="text-[9.5px] font-black text-gray-400 uppercase tracking-widest block mb-1">Target Doctors Active</span>
+                  <div className="text-2xl font-black text-[#128C7E]">
+                    {new Set(mrBookings.map(b => b.doctor)).size} Specialists
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-semibold mt-1">Distinct consultations scheduled</p>
+                </div>
+
+                <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-xs">
+                  <span className="text-[9.5px] font-black text-gray-400 uppercase tracking-widest block mb-1">Active Cap Load</span>
+                  <div className="text-2xl font-black text-amber-600">
+                    {Math.round((mrBookings.length / 15) * 100)}% Capacity
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-semibold mt-1">Based on daily limit of 15 slots</p>
+                </div>
+              </div>
+
+              {/* Search and Filters Section */}
+              <div className="bg-white p-4 rounded-2xl border border-gray-150 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:w-96">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search by Rep Name, Company, Product, or Code..."
+                    value={mrSearchQuery}
+                    onChange={(e) => setMrSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#128C7E] focus:border-[#128C7E] rounded-xl text-xs font-semibold bg-gray-50/50"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-end">
+                  <span className="text-xs text-gray-405 font-black uppercase tracking-wider shrink-0">Filter Doctor:</span>
+                  <select
+                    value={mrDoctorFilter}
+                    onChange={(e) => setMrDoctorFilter(e.target.value)}
+                    className="text-xs font-semibold py-2 px-3 border border-gray-205 rounded-xl bg-white focus:outline-none focus:ring-1 focus:ring-[#128C7E]"
+                  >
+                    <option value="all">All Doctors</option>
+                    {Array.from(new Set(mrBookings.map(b => b.doctor))).map(doc => (
+                      <option key={doc} value={doc}>{doc}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Main bookings table list */}
+              <div className="bg-white rounded-2xl border border-gray-150 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-150">
+                        <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Booking Code</th>
+                        <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Representative Details</th>
+                        <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Product / Science</th>
+                        <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Consulting Doctor</th>
+                        <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Slot Schedule</th>
+                        <th className="p-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {mrBookings.filter(b => {
+                        const matchesSearch = 
+                          (b.name || "").toLowerCase().includes(mrSearchQuery.toLowerCase()) ||
+                          (b.company || "").toLowerCase().includes(mrSearchQuery.toLowerCase()) ||
+                          (b.product || "").toLowerCase().includes(mrSearchQuery.toLowerCase()) ||
+                          (b.code || "").toLowerCase().includes(mrSearchQuery.toLowerCase());
+                        
+                        const matchesDoc = mrDoctorFilter === "all" || b.doctor === mrDoctorFilter;
+
+                        return matchesSearch && matchesDoc;
+                      }).length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-12 text-center text-gray-400 text-xs font-semibold">
+                            No medical representative bookings matched the current query.
+                          </td>
+                        </tr>
+                      ) : (
+                        mrBookings
+                          .filter(b => {
+                            const matchesSearch = 
+                              (b.name || "").toLowerCase().includes(mrSearchQuery.toLowerCase()) ||
+                              (b.company || "").toLowerCase().includes(mrSearchQuery.toLowerCase()) ||
+                              (b.product || "").toLowerCase().includes(mrSearchQuery.toLowerCase()) ||
+                              (b.code || "").toLowerCase().includes(mrSearchQuery.toLowerCase());
+                            
+                            const matchesDoc = mrDoctorFilter === "all" || b.doctor === mrDoctorFilter;
+
+                            return matchesSearch && matchesDoc;
+                          })
+                          .map((booking) => (
+                            <tr key={booking.code} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="p-4">
+                                <span className="font-mono text-xs font-bold text-gray-950 bg-gray-100 border border-gray-200 py-1 px-2.5 rounded-md shadow-3xs">
+                                  {booking.code}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <div className="space-y-0.5">
+                                  <p className="text-xs font-bold text-gray-900">{booking.name}</p>
+                                  <p className="text-[11px] text-gray-500 font-semibold">{booking.company} ({booking.phone})</p>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-bold bg-teal-50 text-teal-800 border border-teal-100/60 max-w-[180px] truncate" title={booking.product}>
+                                  {booking.product}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                  <span className="text-xs font-bold text-gray-900">{booking.doctor}</span>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <div className="space-y-0.5">
+                                  <p className="text-xs font-bold text-gray-900">{booking.date}</p>
+                                  <p className="text-[10.5px] text-gray-400 font-semibold flex items-center gap-1">
+                                    <Clock className="h-3 w-3 inline text-gray-400" />
+                                    <span>{booking.time}</span>
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="p-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteMrBooking(booking.code)}
+                                  className="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer inline-flex items-center justify-center border border-transparent hover:border-rose-100"
+                                  title="Cancel Slot & Release"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
             </motion.div>
           )}
 

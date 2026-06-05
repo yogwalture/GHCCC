@@ -126,6 +126,11 @@ export function MedicalRep() {
   const [bookingError, setBookingError] = useState("");
   const [portalQrUrl, setPortalQrUrl] = useState<string>("");
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    setIsAdmin(localStorage.getItem("gajanan_admin_email") === "yogwalture@gmail.com");
+  }, []);
+
   useEffect(() => {
     const portalUrl = "https://gajananhospitalccc.com/medical-rep";
     QRCode.toDataURL(portalUrl, {
@@ -569,13 +574,25 @@ export function MedicalRep() {
       {/* Sleek Subheader Header */}
       <div className="bg-gradient-to-r from-teal-50 via-sky-50 to-blue-50 border-b border-gray-150 py-10">
         <div className="container mx-auto px-4 max-w-7xl">
-          <Link 
-            to="/" 
-            className="inline-flex items-center gap-2 text-xs font-extrabold uppercase text-teal-800 hover:text-teal-950 transition-colors mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home Page
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <Link 
+              to="/" 
+              className="inline-flex items-center gap-2 text-xs font-extrabold uppercase text-teal-800 hover:text-teal-950 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home Page
+            </Link>
+            
+            {isAdmin && (
+              <Link 
+                to="/admin" 
+                className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-white bg-blue-950 hover:bg-blue-900 px-3.5 py-1.5 rounded-lg transition-all shadow-xs animate-pulse"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 font-bold" />
+                Admin Dashboard (MR Access Active)
+              </Link>
+            )}
+          </div>
           <div className="max-w-3xl">
             <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black uppercase tracking-wider mb-3 border border-teal-200">
               Healthcare Industry Gateway
