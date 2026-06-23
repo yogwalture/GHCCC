@@ -326,7 +326,10 @@ export function MedicalRep() {
         if (res.ok) {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
-            serverBookings = await res.json();
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              serverBookings = data;
+            }
           } else {
             console.warn("Expected JSON from /api/mr-bookings but received non-JSON: " + contentType);
           }
@@ -385,18 +388,23 @@ export function MedicalRep() {
       if (res.ok) {
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.includes("application/json")) {
-          currentServerBookings = await res.json();
-          setMrBookings(currentServerBookings);
-          localStorage.setItem("gajanan_mr_bookings", JSON.stringify(currentServerBookings));
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            currentServerBookings = data;
+            setMrBookings(currentServerBookings);
+            localStorage.setItem("gajanan_mr_bookings", JSON.stringify(currentServerBookings));
+          } else {
+            currentServerBookings = Array.isArray(mrBookings) ? mrBookings : [];
+          }
         } else {
-          currentServerBookings = mrBookings;
+          currentServerBookings = Array.isArray(mrBookings) ? mrBookings : [];
         }
       } else {
-        currentServerBookings = mrBookings;
+        currentServerBookings = Array.isArray(mrBookings) ? mrBookings : [];
       }
     } catch (err) {
       console.error("Failed to query fresh database status:", err);
-      currentServerBookings = mrBookings;
+      currentServerBookings = Array.isArray(mrBookings) ? mrBookings : [];
     }
 
     if (currentServerBookings.length >= 15) {

@@ -90,6 +90,53 @@ const defaultPatients = [
   }
 ];
 
+// Parse "en-IN" locale strings to Date object with fallbacks
+function parseEnInLocaleString(str: string): Date | null {
+  if (!str || str.toLowerCase().includes("n/a")) return null;
+  
+  // Try standard date parsing first
+  let d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return d;
+  }
+  
+  // Custom parser fallback for "23 Jun 2026, 12:11 pm" or similar
+  try {
+    const normalized = str.replace(/ /g, " ").replace(/\s+/g, " ").trim();
+    const parts = normalized.split(/[\s,]+/);
+    if (parts.length >= 4) {
+      const day = parseInt(parts[0]);
+      const monthStr = parts[1];
+      const year = parseInt(parts[2]);
+      const timePart = parts[3];
+      const ampm = parts[4] ? parts[4].toLowerCase() : "";
+      
+      const months: { [key: string]: number } = {
+        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+        january: 0, february: 1, march: 2, april: 3, june: 5, july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
+      };
+      
+      const monthIdx = months[monthStr.toLowerCase().substring(0, 3)];
+      if (monthIdx !== undefined && !isNaN(day) && !isNaN(year)) {
+        const timeParts = timePart.split(":");
+        let hour = parseInt(timeParts[0]);
+        const min = parseInt(timeParts[1] || "0");
+        
+        if (ampm === "pm" && hour < 12) hour += 12;
+        if (ampm === "am" && hour === 12) hour = 0;
+        
+        const fallbackDate = new Date(year, monthIdx, day, hour, min);
+        if (!isNaN(fallbackDate.getTime())) {
+          return fallbackDate;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("parseEnInLocaleString failure:", err);
+  }
+  return null;
+}
+
 export function Admin() {
   const [adminEmail, setAdminEmail] = useState<string | null>(() => localStorage.getItem("gajanan_admin_email"));
   const [loginStep, setLoginStep] = useState<"choose" | "enter" | "authenticating">("choose");
@@ -110,7 +157,9 @@ export function Admin() {
     return localStorage.getItem("gajanan_feedback_template") || 
       `Dear *{PATIENT_NAME}*,\n\nGreetings from *Gajanan Hospital & Critical Care Centre*! 🏥\n\nIt has been {DELAY_HOURS} hours since your appointment with *{DOCTOR_NAME}*. We hope you are recovering well! 🌸\n\nTo help us constantly elevate our clinic standards, please rate your experience by replying with 1 to 5 stars or comment directly on how we did. Thank you! ⭐\n\n_Keep this chat saved for reports, upcoming clinical checkups, or medicine advice._`;
   });
-  const [feedbackDelay, setFeedbackDelay] = useState<string>("24");
+  const [feedbackDelay, setFeedbackDelay] = useState<string>(() => {
+    return localStorage.getItem("gajanan_feedback_delay") || "24";
+  });
   const [toastMsg, setToastMsg] = useState("");
   const [isAddingApt, setIsAddingApt] = useState(false);
   
@@ -138,7 +187,10 @@ export function Admin() {
         if (res.ok) {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
-            serverAppointments = await res.json();
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              serverAppointments = data;
+            }
           } else {
             console.warn("Expected JSON from /api/patient-appointments but received non-JSON: " + contentType);
           }
@@ -202,7 +254,9 @@ export function Admin() {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
             const data = await res.json();
-            setMrBookings(data);
+            if (Array.isArray(data)) {
+              setMrBookings(data);
+            }
           } else {
             console.warn("Expected JSON from /api/mr-bookings but received non-JSON: " + contentType);
           }
@@ -218,7 +272,9 @@ export function Admin() {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
             const data = await res.json();
-            setPastMrBookings(data);
+            if (Array.isArray(data)) {
+              setPastMrBookings(data);
+            }
           } else {
             console.warn("Expected JSON from /api/past-mr-bookings but received non-JSON: " + contentType);
           }
@@ -232,6 +288,118 @@ export function Admin() {
       fetchPastMrBookingsData();
     }
   }, [activeTab, adminEmail]);
+
+  // Real-time background auto-update polling for Appointments, MR bookings, and Feedback schedules
+  useEffect(() => {
+    if (adminEmail !== "yogwalture@gmail.com") return;
+
+    let active = true;
+
+    const pollAndAutoUpdate = async () => {
+      // 1. Fetch & Auto-Update Patient Appointments + Process Scheduled Feedbacks
+      try {
+        const res = await fetch("/api/patient-appointments");
+        if (res.ok && active) {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              let changed = false;
+              const now = new Date();
+              
+              const updated = data.map((appt: any) => {
+                if (appt.feedbackScheduled && !appt.feedbackTriggered && (appt.status === "completed" || appt.status === "confirmed") && appt.feedbackScheduledTime) {
+                  const scheduledDate = parseEnInLocaleString(appt.feedbackScheduledTime);
+                  if (scheduledDate && now >= scheduledDate) {
+                    changed = true;
+                    return {
+                      ...appt,
+                      feedbackTriggered: true,
+                      feedbackTriggeredAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+                    };
+                  }
+                }
+                return appt;
+              });
+
+              if (changed) {
+                setAppointments(updated);
+                localStorage.setItem("gajanan_patient_appointments", JSON.stringify(updated));
+                try {
+                  await fetch("/api/patient-appointments", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updated),
+                  });
+                  triggerToast("Clinical feedback campaign automatically updated & dispatched based on schedule!");
+                } catch (err) {
+                  console.error("Failed to auto-sync processed feedback:", err);
+                }
+              } else {
+                const currentStr = JSON.stringify(appointments);
+                const fetchedStr = JSON.stringify(data);
+                if (currentStr !== fetchedStr) {
+                  setAppointments(data);
+                  localStorage.setItem("gajanan_patient_appointments", JSON.stringify(data));
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Auto-polling patient appointments failed:", err);
+      }
+
+      // 2. Fetch & Auto-Update MR Bookings
+      try {
+        const res = await fetch("/api/mr-bookings");
+        if (res.ok && active) {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              const currentStr = JSON.stringify(mrBookings);
+              const fetchedStr = JSON.stringify(data);
+              if (currentStr !== fetchedStr) {
+                setMrBookings(data);
+                localStorage.setItem("gajanan_mr_bookings", JSON.stringify(data));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Auto-polling MR bookings failed:", err);
+      }
+
+      // 3. Fetch & Auto-Update Past MR Bookings
+      try {
+        const res = await fetch("/api/past-mr-bookings");
+        if (res.ok && active) {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              const currentStr = JSON.stringify(pastMrBookings);
+              const fetchedStr = JSON.stringify(data);
+              if (currentStr !== fetchedStr) {
+                setPastMrBookings(data);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Auto-polling past MR bookings failed:", err);
+      }
+    };
+
+    // Poll every 5 seconds
+    const intervalId = setInterval(pollAndAutoUpdate, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, [adminEmail, appointments, mrBookings, pastMrBookings]);
 
   // Handler to delete/cancel MR bookings
   const handleDeleteMrBooking = async (code: string) => {
@@ -1300,8 +1468,13 @@ export function Admin() {
                         if (res.ok) {
                           const contentType = res.headers.get("content-type");
                           if (contentType && contentType.includes("application/json")) {
-                            setMrBookings(await res.json());
-                            triggerToast("Roster synced successfully.");
+                            const data = await res.json();
+                            if (Array.isArray(data)) {
+                              setMrBookings(data);
+                              triggerToast("Roster synced successfully.");
+                            } else {
+                              triggerToast("Sync loaded invalid roster array.");
+                            }
                           } else {
                             triggerToast("Sync loaded non-JSON response from node.");
                           }

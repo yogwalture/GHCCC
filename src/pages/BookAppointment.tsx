@@ -57,11 +57,14 @@ export function BookAppointment() {
       // Sync to database
       try {
         const res = await fetch("/api/patient-appointments");
-        let serverList = [];
+        let serverList: any[] = [];
         if (res.ok) {
           const contentType = res.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
-            serverList = await res.json();
+            const data = await res.json();
+            if (Array.isArray(data)) {
+              serverList = data;
+            }
           } else {
             console.warn("Expected JSON from /api/patient-appointments but received non-JSON: " + contentType);
           }
