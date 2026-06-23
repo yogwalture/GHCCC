@@ -91,8 +91,8 @@ const defaultPatients = [
 ];
 
 // Parse "en-IN" locale strings to Date object with fallbacks
-function parseEnInLocaleString(str: string): Date | null {
-  if (!str || str.toLowerCase().includes("n/a")) return null;
+function parseEnInLocaleString(str: any): Date | null {
+  if (!str || typeof str !== "string" || str.toLowerCase().includes("n/a")) return null;
   
   // Try standard date parsing first
   let d = new Date(str);
@@ -289,6 +289,24 @@ export function Admin() {
     }
   }, [activeTab, adminEmail]);
 
+  // Create refs to store the latest values of state arrays so that background polling doesn't stale out
+  const appointmentsRef = React.useRef(appointments);
+  const mrBookingsRef = React.useRef(mrBookings);
+  const pastMrBookingsRef = React.useRef(pastMrBookings);
+
+  // Keep these refs in sync with current states
+  useEffect(() => {
+    appointmentsRef.current = appointments;
+  }, [appointments]);
+
+  useEffect(() => {
+    mrBookingsRef.current = mrBookings;
+  }, [mrBookings]);
+
+  useEffect(() => {
+    pastMrBookingsRef.current = pastMrBookings;
+  }, [pastMrBookings]);
+
   // Real-time background auto-update polling for Appointments, MR bookings, and Feedback schedules
   useEffect(() => {
     if (adminEmail !== "yogwalture@gmail.com") return;
@@ -336,7 +354,7 @@ export function Admin() {
                   console.error("Failed to auto-sync processed feedback:", err);
                 }
               } else {
-                const currentStr = JSON.stringify(appointments);
+                const currentStr = JSON.stringify(appointmentsRef.current);
                 const fetchedStr = JSON.stringify(data);
                 if (currentStr !== fetchedStr) {
                   setAppointments(data);
@@ -358,7 +376,7 @@ export function Admin() {
           if (contentType && contentType.includes("application/json")) {
             const data = await res.json();
             if (Array.isArray(data)) {
-              const currentStr = JSON.stringify(mrBookings);
+              const currentStr = JSON.stringify(mrBookingsRef.current);
               const fetchedStr = JSON.stringify(data);
               if (currentStr !== fetchedStr) {
                 setMrBookings(data);
@@ -379,7 +397,7 @@ export function Admin() {
           if (contentType && contentType.includes("application/json")) {
             const data = await res.json();
             if (Array.isArray(data)) {
-              const currentStr = JSON.stringify(pastMrBookings);
+              const currentStr = JSON.stringify(pastMrBookingsRef.current);
               const fetchedStr = JSON.stringify(data);
               if (currentStr !== fetchedStr) {
                 setPastMrBookings(data);
@@ -399,7 +417,7 @@ export function Admin() {
       active = false;
       clearInterval(intervalId);
     };
-  }, [adminEmail, appointments, mrBookings, pastMrBookings]);
+  }, [adminEmail]);
 
   // Handler to delete/cancel MR bookings
   const handleDeleteMrBooking = async (code: string) => {
