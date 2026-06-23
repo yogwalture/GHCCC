@@ -22,7 +22,9 @@ import {
   Trash2,
   Download,
   Briefcase,
-  Lock
+  Lock,
+  Database,
+  History
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
@@ -97,6 +99,8 @@ export function Admin() {
   const [mrBookings, setMrBookings] = useState<any[]>([]);
   const [mrSearchQuery, setMrSearchQuery] = useState("");
   const [mrDoctorFilter, setMrDoctorFilter] = useState("all");
+  const [pastMrBookings, setPastMrBookings] = useState<any[]>([]);
+  const [pastMrSearchQuery, setPastMrSearchQuery] = useState("");
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [appointments, setAppointments] = useState<any[]>([]);
@@ -132,7 +136,12 @@ export function Admin() {
       try {
         const res = await fetch("/api/patient-appointments");
         if (res.ok) {
-          serverAppointments = await res.json();
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            serverAppointments = await res.json();
+          } else {
+            console.warn("Expected JSON from /api/patient-appointments but received non-JSON: " + contentType);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch patient appointments:", err);
@@ -184,21 +193,43 @@ export function Admin() {
     fetchAndSyncAppointments();
   }, []);
 
-  // Sync MR bookings list from server-side persistent database when tab is selected
+  // Sync MR bookings list and past historical archives when tab is selected
   useEffect(() => {
     const fetchMrBookingsData = async () => {
       try {
         const res = await fetch("/api/mr-bookings");
         if (res.ok) {
-          const data = await res.json();
-          setMrBookings(data);
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            setMrBookings(data);
+          } else {
+            console.warn("Expected JSON from /api/mr-bookings but received non-JSON: " + contentType);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch MR bookings in admin:", err);
       }
     };
+    const fetchPastMrBookingsData = async () => {
+      try {
+        const res = await fetch("/api/past-mr-bookings");
+        if (res.ok) {
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            setPastMrBookings(data);
+          } else {
+            console.warn("Expected JSON from /api/past-mr-bookings but received non-JSON: " + contentType);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch past MR bookings in admin:", err);
+      }
+    };
     if (adminEmail === "yogwalture@gmail.com") {
       fetchMrBookingsData();
+      fetchPastMrBookingsData();
     }
   }, [activeTab, adminEmail]);
 
@@ -1267,8 +1298,13 @@ export function Admin() {
                       try {
                         const res = await fetch("/api/mr-bookings");
                         if (res.ok) {
-                          setMrBookings(await res.json());
-                          triggerToast("Roster synced successfully.");
+                          const contentType = res.headers.get("content-type");
+                          if (contentType && contentType.includes("application/json")) {
+                            setMrBookings(await res.json());
+                            triggerToast("Roster synced successfully.");
+                          } else {
+                            triggerToast("Sync loaded non-JSON response from node.");
+                          }
                         }
                       } catch (err) {
                         triggerToast("Sync failed. Check connection.");
@@ -1451,6 +1487,225 @@ export function Admin() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* Database Download and Archived History Logging Section */}
+              <div className="pt-6 border-t border-gray-150 space-y-6">
+                <div>
+                  <h3 className="text-lg font-black text-gray-950 tracking-tight flex items-center gap-2">
+                    <Database className="h-5 w-5 text-indigo-600 animate-pulse" />
+                    <span>Live Database Backups & Historical Archives</span>
+                  </h3>
+                  <p className="text-xs text-gray-500 font-semibold">
+                    Inspect active runtime rosters or securely download physical database exports preserved live in the hosting node.
+                  </p>
+                </div>
+
+                {/* Databases Grid card selectors */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="p-2 bg-teal-50 text-teal-700 rounded-xl border border-teal-100/60">
+                          <Briefcase className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h4 className="text-xs font-black text-gray-800 uppercase tracking-wider">Active MR Bookings</h4>
+                          <p className="text-[10px] text-gray-400 font-semibold">Current daily outpatient load</p>
+                        </div>
+                      </div>
+                      <div className="text-xl font-black text-gray-950 mb-1">{mrBookings.length} Active Records</div>
+                      <p className="text-[10px] text-gray-400 leading-normal mb-4">
+                        Current live medical representative schedules stored on the active roster (capacity limited to 15).
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([JSON.stringify(mrBookings, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `latest_mr_active_bookings_${new Date().toISOString().split("T")[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        triggerToast("Active MR Roster DB downloaded successfully.");
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-extrabold text-teal-800 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all border border-teal-100 border-dashed cursor-pointer"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Download Active MR JSON</span>
+                    </button>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="p-2 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-100/60">
+                          <History className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h4 className="text-xs font-black text-gray-800 uppercase tracking-wider">Past Historical MR DB</h4>
+                          <p className="text-[10px] text-gray-400 font-semibold">Total history logs since inception</p>
+                        </div>
+                      </div>
+                      <div className="text-xl font-black text-gray-950 mb-1">{pastMrBookings.length} Historical Records</div>
+                      <p className="text-[10px] text-gray-400 leading-normal mb-4">
+                        Preserves a permanent, un-purged registry of every meeting request submitted by medical reps.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([JSON.stringify(pastMrBookings, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `past_historical_mr_database_${new Date().toISOString().split("T")[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        triggerToast("Historical MR Database downloaded successfully.");
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-extrabold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100 border-dashed cursor-pointer"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Download Past Database (JSON)</span>
+                    </button>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-gray-150 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="p-2 bg-blue-50 text-blue-700 rounded-xl border border-blue-100/60">
+                          <Users className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h4 className="text-xs font-black text-gray-800 uppercase tracking-wider">Patient Appointments DB</h4>
+                          <p className="text-[10px] text-gray-400 font-semibold">Outpatient queue database</p>
+                        </div>
+                      </div>
+                      <div className="text-xl font-black text-gray-950 mb-1">{appointments.length} Patient Records</div>
+                      <p className="text-[10px] text-gray-400 leading-normal mb-4">
+                        Comprehensive registered clinical patient queues and automated WhatsApp feedback logs.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([JSON.stringify(appointments, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `patient_appointments_database_${new Date().toISOString().split("T")[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        triggerToast("Patient Appointments DB downloaded successfully.");
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-extrabold text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-xl transition-all border border-blue-100 border-dashed cursor-pointer"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Download Patient Queue JSON</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Past/Historical Table Log Visualizer */}
+                <div className="bg-white rounded-2xl border border-gray-150 shadow-xs overflow-hidden">
+                  <div className="p-4 bg-gray-50 border-b border-gray-150 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <History className="h-4 w-4 text-indigo-600" />
+                        <span>Past / Archives MR Database Logs ({pastMrBookings.length} total)</span>
+                      </h4>
+                      <p className="text-[10px] text-gray-400 font-semibold">
+                        A persistent history ledger of all rep engagements at Gajanan Hospital.
+                      </p>
+                    </div>
+
+                    <div className="relative w-full sm:w-64">
+                      <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                        <Search className="h-3.5 w-3.5 text-gray-400" />
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search past logs..."
+                        value={pastMrSearchQuery}
+                        onChange={(e) => setPastMrSearchQuery(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg text-[11px] font-semibold bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-150">
+                          <th className="p-3 text-[9.5px] font-black text-gray-400 uppercase tracking-widest">Date / Time</th>
+                          <th className="p-3 text-[9.5px] font-black text-gray-400 uppercase tracking-widest">Reference Code</th>
+                          <th className="p-3 text-[9.5px] font-black text-gray-400 uppercase tracking-widest">Representative name</th>
+                          <th className="p-3 text-[9.5px] font-black text-gray-400 uppercase tracking-widest">Company & Phone</th>
+                          <th className="p-3 text-[9.5px] font-black text-gray-400 uppercase tracking-widest">Specialist doctor</th>
+                          <th className="p-3 text-[9.5px] font-black text-gray-400 uppercase tracking-widest">Product focus</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 text-gray-800">
+                        {pastMrBookings.filter(b => {
+                          const query = pastMrSearchQuery.toLowerCase();
+                          return (b.name || "").toLowerCase().includes(query) ||
+                            (b.company || "").toLowerCase().includes(query) ||
+                            (b.product || "").toLowerCase().includes(query) ||
+                            (b.code || "").toLowerCase().includes(query) ||
+                            (b.doctor || "").toLowerCase().includes(query);
+                        }).length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center text-gray-400 text-xs font-semibold">
+                              No historical MR entries matched your query.
+                            </td>
+                          </tr>
+                        ) : (
+                          pastMrBookings
+                            .filter(b => {
+                              const query = pastMrSearchQuery.toLowerCase();
+                              return (b.name || "").toLowerCase().includes(query) ||
+                                (b.company || "").toLowerCase().includes(query) ||
+                                (b.product || "").toLowerCase().includes(query) ||
+                                (b.code || "").toLowerCase().includes(query) ||
+                                (b.doctor || "").toLowerCase().includes(query);
+                            })
+                            .map((booking, idx) => (
+                              <tr key={booking.code + "-" + idx} className="hover:bg-slate-50/50 transition-colors text-[11.5px]">
+                                <td className="p-3 font-semibold text-gray-950 whitespace-nowrap">
+                                  {booking.date} <span className="text-gray-400 font-normal">({booking.time})</span>
+                                </td>
+                                <td className="p-3">
+                                  <span className="font-mono text-[10px] font-bold text-indigo-950 bg-indigo-50 border border-indigo-100 py-0.5 px-2 rounded">
+                                    {booking.code}
+                                  </span>
+                                </td>
+                                <td className="p-3 font-bold text-gray-905">
+                                  {booking.name}
+                                </td>
+                                <td className="p-3 text-gray-600">
+                                  {booking.company} <span className="text-gray-400 font-normal">({booking.phone})</span>
+                                </td>
+                                <td className="p-3 font-semibold text-teal-950">
+                                  {booking.doctor}
+                                </td>
+                                <td className="p-3 max-w-[150px] truncate" title={booking.product}>
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                                    {booking.product}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 

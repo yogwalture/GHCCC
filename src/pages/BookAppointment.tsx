@@ -59,7 +59,12 @@ export function BookAppointment() {
         const res = await fetch("/api/patient-appointments");
         let serverList = [];
         if (res.ok) {
-          serverList = await res.json();
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            serverList = await res.json();
+          } else {
+            console.warn("Expected JSON from /api/patient-appointments but received non-JSON: " + contentType);
+          }
         }
         const mergedList = [newAppt, ...serverList];
         // Ensure uniqueness by ID

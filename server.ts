@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 
 async function startServer() {
   const app = express();
@@ -12,6 +11,7 @@ async function startServer() {
   // Database files structure (JSON state persistent database)
   const DB_DIR = path.join(process.cwd(), "data");
   const MR_DB_PATH = path.join(DB_DIR, "mr_bookings.json");
+  const PAST_MR_DB_PATH = path.join(DB_DIR, "past_mr_bookings.json");
   const PATIENT_DB_PATH = path.join(DB_DIR, "patient_appointments.json");
 
   // Ensure DB files exist
@@ -21,6 +21,9 @@ async function startServer() {
     }
     if (!fs.existsSync(MR_DB_PATH)) {
       fs.writeFileSync(MR_DB_PATH, JSON.stringify([], null, 2), "utf-8");
+    }
+    if (!fs.existsSync(PAST_MR_DB_PATH)) {
+      fs.writeFileSync(PAST_MR_DB_PATH, JSON.stringify([], null, 2), "utf-8");
     }
     if (!fs.existsSync(PATIENT_DB_PATH)) {
       fs.writeFileSync(PATIENT_DB_PATH, JSON.stringify([], null, 2), "utf-8");
@@ -43,6 +46,20 @@ async function startServer() {
     }
   });
 
+  // API Route - Get past (historical) MR bookings
+  app.get("/api/past-mr-bookings", (req, res) => {
+    try {
+      if (!fs.existsSync(PAST_MR_DB_PATH)) {
+        return res.json([]);
+      }
+      const data = fs.readFileSync(PAST_MR_DB_PATH, "utf-8");
+      res.json(JSON.parse(data || "[]"));
+    } catch (e) {
+      console.error("Error reading past MR bookings:", e);
+      res.status(500).json({ error: "Failed to read past database" });
+    }
+  });
+
   // API Route - Save/Update MR bookings
   app.post("/api/mr-bookings", (req, res) => {
     try {
@@ -50,7 +67,35 @@ async function startServer() {
       if (!Array.isArray(newBookings)) {
         return res.status(400).json({ error: "Invalid booking payload" });
       }
+      if (newBookings.length > 15) {
+        return res.status(400).json({ error: "Booking capacity exceeded. Maximum is 15." });
+      }
+      
       fs.writeFileSync(MR_DB_PATH, JSON.stringify(newBookings, null, 2), "utf-8");
+
+      // Auto-populate past_mr_bookings.json with newly introduced bookings in history
+      let pastBookings: any[] = [];
+      if (fs.existsSync(PAST_MR_DB_PATH)) {
+        try {
+          pastBookings = JSON.parse(fs.readFileSync(PAST_MR_DB_PATH, "utf-8") || "[]");
+        } catch (err) {
+          pastBookings = [];
+        }
+      }
+
+      let historyChanged = false;
+      newBookings.forEach((booking) => {
+        const alreadyExists = pastBookings.some((p) => p.code === booking.code);
+        if (!alreadyExists) {
+          pastBookings.push(booking);
+          historyChanged = true;
+        }
+      });
+
+      if (historyChanged || !fs.existsSync(PAST_MR_DB_PATH)) {
+        fs.writeFileSync(PAST_MR_DB_PATH, JSON.stringify(pastBookings, null, 2), "utf-8");
+      }
+
       res.json({ success: true, bookings: newBookings });
     } catch (e) {
       console.error("Error writing MR bookings:", e);
@@ -89,6 +134,7 @@ async function startServer() {
 
   // Vite middleware for development or static server for production
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",

@@ -324,7 +324,12 @@ export function MedicalRep() {
       try {
         const res = await fetch("/api/mr-bookings");
         if (res.ok) {
-          serverBookings = await res.json();
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            serverBookings = await res.json();
+          } else {
+            console.warn("Expected JSON from /api/mr-bookings but received non-JSON: " + contentType);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch MR bookings from database:", err);
@@ -369,12 +374,33 @@ export function MedicalRep() {
     fetchAndSyncMRBookings();
   }, []);
 
-  const handleMRRequest = (e: React.FormEvent) => {
+  const handleMRRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError("");
 
-    if (mrBookings.length >= 15) {
-      setBookingError("Booking capacity full! Clear slots or wait for next cycle.");
+    // Freshly query active database first to prevent limit bypassing
+    let currentServerBookings: any[] = [];
+    try {
+      const res = await fetch("/api/mr-bookings");
+      if (res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          currentServerBookings = await res.json();
+          setMrBookings(currentServerBookings);
+          localStorage.setItem("gajanan_mr_bookings", JSON.stringify(currentServerBookings));
+        } else {
+          currentServerBookings = mrBookings;
+        }
+      } else {
+        currentServerBookings = mrBookings;
+      }
+    } catch (err) {
+      console.error("Failed to query fresh database status:", err);
+      currentServerBookings = mrBookings;
+    }
+
+    if (currentServerBookings.length >= 15) {
+      setBookingError("Booking capacity full! The maximum limit of 15 registered sessions has been met.");
       return;
     }
 
@@ -399,7 +425,7 @@ export function MedicalRep() {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const code = `MR-GAJ-${randomSuffix}`;
 
-    const tempBooking = {
+    const newBooking = {
       name: mrName,
       company: mrCompany,
       doctor: selectedDocName,
@@ -407,44 +433,43 @@ export function MedicalRep() {
       time: mrTimeSlot,
       product: mrProduct,
       phone: mrPhone,
-      code
-    };
-
-    setAwaitingConfirm(tempBooking);
-  };
-
-  const handleOpenWhatsApp = () => {
-    if (!awaitingConfirm) return;
-
-    const message = `Hello Gajanan Hospital & Critical Care Centre,\n\nI am a Medical Representative requesting a doctor meeting slot. Please confirm our booking from your official hospital WhatsApp account!\n\n*Proposed Booking Details:*\n- *Booking Reference Code:* ${awaitingConfirm.code || "MR-GAJ-NEW"}\n- *Rep Name:* ${awaitingConfirm.name}\n- *Company:* ${awaitingConfirm.company}\n- *Mobile Number:* ${awaitingConfirm.phone}\n- *Target Doctor:* ${awaitingConfirm.doctor}\n- *Proposed Date:* ${awaitingConfirm.date}\n- *Time Slot:* ${awaitingConfirm.time}\n- *Product focus / Molecule:* ${awaitingConfirm.product}\n\n*Please reply with 'CONFIRMED' directly from this hospital account to lock my slot. Thank you!*`;
-    const encoded = encodeURIComponent(message);
-    window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encoded}`, "_blank");
-  };
-
-  const finalizeMRBooking = async () => {
-    if (!awaitingConfirm) return;
-
-    const newBooking = {
-      ...awaitingConfirm,
+      code,
       status: "Fixed & Confirmed"
     };
 
-    const updatedBookings = [...mrBookings, newBooking];
+    const updatedBookings = [...currentServerBookings, newBooking];
     setMrBookings(updatedBookings);
     localStorage.setItem("gajanan_mr_bookings", JSON.stringify(updatedBookings));
 
     // Save to server-side file persistent database
     try {
-      await fetch("/api/mr-bookings", {
+      const saveRes = await fetch("/api/mr-bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedBookings),
       });
+      if (!saveRes.ok) {
+        const contentType = saveRes.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errData = await saveRes.json();
+          if (errData?.error) {
+            setBookingError(errData.error);
+            return;
+          }
+        }
+        setBookingError("Failed to synchronize booking with database server.");
+        return;
+      }
     } catch (err) {
       console.error("Failed to write MR booking to server database:", err);
     }
 
-    setBookingSuccessCode(awaitingConfirm.code);
+    // Simultaneously trigger sending the message to WhatsApp
+    const message = `Hello Gajanan Hospital & Critical Care Centre,\n\nI am a Medical Representative requesting a doctor meeting slot. Please confirm our booking from your official hospital WhatsApp account!\n\n*Confirmed Booking Details:*\n- *Booking Reference Code:* ${newBooking.code}\n- *Rep Name:* ${newBooking.name}\n- *Company:* ${newBooking.company}\n- *Mobile Number:* ${newBooking.phone}\n- *Target Doctor:* ${newBooking.doctor}\n- *Confirmed Date:* ${newBooking.date}\n- *Time Slot:* ${newBooking.time}\n- *Product focus / Molecule:* ${newBooking.product}\n\n*The appointment is locked and saved in the system roster. Thank you!*`;
+    const encoded = encodeURIComponent(message);
+    window.open(`https://api.whatsapp.com/send?phone=918329573283&text=${encoded}`, "_blank");
+
+    setBookingSuccessCode(code);
     setAwaitingConfirm(null);
 
     // Clear Form Fields
@@ -455,6 +480,14 @@ export function MedicalRep() {
     setMrDoctor("");
     setMrDate("");
     setMrTimeSlot("");
+  };
+
+  const handleOpenWhatsApp = () => {
+    // Left for safety / reference
+  };
+
+  const finalizeMRBooking = async () => {
+    // Left for safety / reference
   };
 
   const normalizePhoneNumber = (phone: string) => {
@@ -663,12 +696,12 @@ export function MedicalRep() {
               <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/10 rounded-full -mr-8 -mt-8 pointer-events-none" />
               <h3 className="text-xs font-black tracking-widest uppercase mb-3 flex items-center text-teal-300">
                 <Sparkles className="h-4 w-4 mr-1.5" />
-                Dual-Step Process
+                Single-Step Confirmation
               </h3>
               <ol className="space-y-3.5 text-xs font-medium text-blue-100 leading-normal list-decimal pl-3.5">
-                <li>Complete the scientific index form and select a medical director.</li>
-                <li>Tap <strong className="text-white">Step 1</strong> to open your pre-filled invite page inside WhatsApp.</li>
-                <li>Tap <strong className="text-white">Step 2</strong> on your screen to immediately lock your slot on the official hospital roster.</li>
+                <li>Complete the scientific index form and select an available date and target doctor.</li>
+                <li>Tap <strong className="text-white">Confirm Appointment & Send WhatsApp</strong> to lock your slot and draft the message in one click.</li>
+                <li>Your booking is immediately registered in the hospital database roster.</li>
               </ol>
 
               {mrBookings.length > 0 && (
@@ -858,77 +891,6 @@ export function MedicalRep() {
                         >
                           Fill New Slot Booking Form &rarr;
                         </button>
-                      </div>
-                    ) : awaitingConfirm ? (
-                      
-                      /* Step-by-step dispatch control panel */
-                      <div className="space-y-6">
-                        <div className="flex items-start gap-3 p-4 bg-amber-50/40 border border-amber-200 rounded-xl text-amber-900 text-xs">
-                          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                          <div className="space-y-1">
-                            <p className="font-black uppercase tracking-wider">Step-by-Step WhatsApp Action Required</p>
-                            <p className="text-gray-600">
-                              Please submit step 1 to fire your details securely on our WhatsApp portal link. Then return here and tap step 2 to record the slot on the clinical terminal.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Summary details */}
-                        <div className="bg-gray-50 rounded-xl border border-gray-150 p-5 space-y-3 text-xs leading-normal">
-                          <h4 className="font-black text-gray-400 uppercase tracking-widest text-[10px] border-b border-gray-200 pb-1">Proposed Roster Slip</h4>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-bold tracking-wider">Representative Name:</span>
-                              <strong className="text-gray-800 text-xs font-black">{awaitingConfirm.name}</strong>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-bold tracking-wider">Scientific Molecule:</span>
-                              <strong className="text-gray-800 text-xs font-semibold">{awaitingConfirm.product}</strong>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-bold tracking-wider">Hospital Doctor:</span>
-                              <strong className="text-teal-950 text-xs font-extrabold">{awaitingConfirm.doctor}</strong>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 block text-[9px] uppercase font-bold tracking-wider">Date & Preferred Time:</span>
-                              <strong className="text-gray-800 text-xs font-bold">{awaitingConfirm.date} @ {awaitingConfirm.time}</strong>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Scanner option */}
-                        <QuickScanQR 
-                          url={getAwaitingConfirmUrl()}
-                          label="Scan to automatically format and bridge this representative dispatch straight to your smartphone's WhatsApp chat."
-                        />
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                          <button
-                            onClick={handleOpenWhatsApp}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
-                          >
-                            <MessageCircle className="h-4.5 w-4.5" />
-                            Step 1: Dispatch WhatsApp Msg
-                          </button>
-                          <button
-                            onClick={finalizeMRBooking}
-                            className="bg-blue-950 hover:bg-blue-900 border border-blue-950 text-white py-3.5 px-4 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-                          >
-                            <UserCheck className="h-4.5 w-4.5" />
-                            Step 2: Save on Roster
-                          </button>
-                        </div>
-
-                        <div className="text-center">
-                          <button 
-                            type="button"
-                            onClick={() => setAwaitingConfirm(null)}
-                            className="text-xs font-bold text-gray-400 hover:text-gray-600 underline"
-                          >
-                            Cancel and update form entries
-                          </button>
-                        </div>
                       </div>
                     ) : (
                       
@@ -1196,13 +1158,13 @@ export function MedicalRep() {
                           >
                             <MessageCircle className="h-4 w-4" />
                             {(() => {
-                              if (!mrDoctor || !mrDate) return "Launch Dual-Step Booking Route";
+                              if (!mrDoctor || !mrDate) return "Confirm Appointment & Send WhatsApp";
                               const selectedDateObj = getFilteredDatesWithStatus(mrDoctor).find(d => d.readable === mrDate);
                               if (selectedDateObj) {
-                                if (selectedDateObj.status === "LOCKED") return "Booking Locked (Opens 1 Day Prior at 8:00 AM)";
-                                if (selectedDateObj.status === "EXPIRED") return "Booking Closed (Call Time Passed)";
+                                  if (selectedDateObj.status === "LOCKED") return "Booking Locked (Opens 1 Day Prior at 8:00 AM)";
+                                  if (selectedDateObj.status === "EXPIRED") return "Booking Closed (Call Time Passed)";
                               }
-                              return "Launch Dual-Step Booking Route";
+                              return "Confirm Appointment & Send WhatsApp";
                             })()}
                           </button>
                           <p className="text-[10px] text-gray-400 text-center mt-2.5 font-semibold leading-normal">
