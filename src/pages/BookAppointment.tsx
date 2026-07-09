@@ -9,7 +9,7 @@ const directors = [
   { id: "dr-sachin-patil", name: "Dr. Sachin Atmaram Patil", spec: "Consultant Joint Replacement, Arthroscopy & Orthopaedic Surgeon" },
   { id: "dr-rahul-ruikar", name: "Dr. Rahul Ruikar", spec: "Nephrology / Kidney Specialist (OPD 5:00 PM - 7:00 PM)" },
   { id: "dr-dilip", name: "Dr. Dilip Thombre", spec: "Physician Cardiologist, Diabetologist & Intensivist" },
-  { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", spec: "Consultant Physician & Intensivist" },
+  { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", spec: "Chest Physician & Intensivist" },
 ];
 
 export function BookAppointment() {

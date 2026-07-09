@@ -1050,6 +1050,63 @@ export function Admin() {
                       </table>
                     </div>
                   </div>
+
+                  {/* MR Bookings quick snapshot */}
+                  <div className="bg-white rounded-2xl shadow-xs border border-gray-150 overflow-hidden">
+                    <div className="p-5 border-b border-gray-150 flex items-center justify-between bg-gray-50/50">
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                          <Briefcase className="h-4 w-4 text-[#128C7E]" />
+                          <span>Upcoming MR Bookings</span>
+                        </h3>
+                        <p className="text-[10px] text-gray-400 font-semibold">Active registered sessions with medical representatives</p>
+                      </div>
+                      <button 
+                        onClick={() => setActiveTab("mr_bookings")} 
+                        className="text-xs font-black text-[#128C7E] hover:text-[#075E54] leading-none select-none"
+                      >
+                        View MR Roster &rarr;
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead className="bg-[#fcfdfe] text-gray-400 text-[9px] font-extrabold uppercase tracking-wider border-b border-gray-100">
+                          <tr>
+                            <th className="px-5 py-3">Rep Details</th>
+                            <th className="px-5 py-3">Specialist Doctor</th>
+                            <th className="px-5 py-3">Slot Schedule</th>
+                            <th className="px-5 py-3">Product Focus / Molecule</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-xs">
+                          {mrBookings.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="px-5 py-8 text-center text-gray-400 font-bold">
+                                No upcoming MR bookings scheduled.
+                              </td>
+                            </tr>
+                          ) : (
+                            mrBookings.slice(0, 4).map((b) => (
+                              <tr key={b.code} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-5 py-3.5">
+                                  <div className="font-extrabold text-gray-950">{b.name}</div>
+                                  <div className="text-[10px] text-gray-400 font-semibold">{b.company} ({b.phone})</div>
+                                </td>
+                                <td className="px-5 py-3.5 font-bold text-gray-700">{b.doctor}</td>
+                                <td className="px-5 py-3.5 font-semibold text-gray-650">{b.date} • {b.time}</td>
+                                <td className="px-5 py-3.5">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[9.5px] font-bold bg-teal-50 text-teal-800 border border-teal-100 max-w-[150px] truncate" title={b.product}>
+                                    {b.product}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Right side: Template Control Room info and Scheduler Status */}
@@ -1167,6 +1224,7 @@ export function Admin() {
                           <option>Dr. Sachin D. Suryawanshi</option>
                           <option>Dr. Sachin Atmaram Patil</option>
                           <option>Dr. Dilip Thombre</option>
+                          <option>Dr. Rameshwar Hajare</option>
                         </select>
                       </div>
 

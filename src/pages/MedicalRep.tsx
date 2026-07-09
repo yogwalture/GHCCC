@@ -163,7 +163,7 @@ export function MedicalRep() {
     { id: "dr-sachin-patil", name: "Dr. Sachin Atmaram Patil", desc: "Consultant - Orthopaedic Department", schedule: "1st Thursday of Month (3:00 PM to 3:30 PM)", timeSlot: "3:00 PM - 3:30 PM", callDay: "1st Thursday" },
     { id: "dr-rahul-ruikar", name: "Dr. Rahul Ruikar", desc: "Consultant - Nephrology (Kidney Specialist)", schedule: "Mondays to Saturdays (5:00 PM to 7:00 PM)", timeSlot: "5:00 PM - 7:00 PM", callDay: "Prior Appointment" },
     { id: "dr-dilip", name: "Dr. Dilip Thombre", desc: "Director - Medicine & Critical Care", schedule: "Special permission only", timeSlot: "Special Request Slot", callDay: "Prior Appointment" },
-    { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", desc: "Director - Medicine & Critical Care", schedule: "Special permission only", timeSlot: "Special Request Slot", callDay: "Prior Appointment" }
+    { id: "dr-rameshwar", name: "Dr. Rameshwar Hajare", desc: "Director - Chest Physician & Intensivist", schedule: "Special permission only", timeSlot: "Special Request Slot", callDay: "Prior Appointment" }
   ];
 
   const getCallStartTime = (timeSlot: string): { hour: number; minute: number } => {

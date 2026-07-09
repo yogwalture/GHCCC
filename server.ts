@@ -32,6 +32,62 @@ async function startServer() {
     console.error("Database directory setup error:", err);
   }
 
+  // Helper to filter out and archive past MR bookings whose day is over
+  function cleanAndRenewMrBookings(bookings: any[], activeDbPath: string, pastDbPath: string): any[] {
+    const today = new Date();
+    // Midnight check in the local time representation
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    const activeList: any[] = [];
+    const expiredList: any[] = [];
+
+    bookings.forEach((b) => {
+      try {
+        const bDate = new Date(b.date);
+        if (!isNaN(bDate.getTime())) {
+          if (bDate < todayMidnight) {
+            expiredList.push(b);
+          } else {
+            activeList.push(b);
+          }
+        } else {
+          activeList.push(b); // Keep as active fallback if unparseable
+        }
+      } catch (err) {
+        activeList.push(b);
+      }
+    });
+
+    // If there are expired bookings, update both files
+    if (expiredList.length > 0) {
+      fs.writeFileSync(activeDbPath, JSON.stringify(activeList, null, 2), "utf-8");
+
+      let pastList: any[] = [];
+      if (fs.existsSync(pastDbPath)) {
+        try {
+          pastList = JSON.parse(fs.readFileSync(pastDbPath, "utf-8") || "[]");
+        } catch (err) {
+          pastList = [];
+        }
+      }
+
+      let archiveChanged = false;
+      expiredList.forEach((b) => {
+        const exists = pastList.some((p) => p.code === b.code);
+        if (!exists) {
+          pastList.push(b);
+          archiveChanged = true;
+        }
+      });
+
+      if (archiveChanged || !fs.existsSync(pastDbPath)) {
+        fs.writeFileSync(pastDbPath, JSON.stringify(pastList, null, 2), "utf-8");
+      }
+    }
+
+    return activeList;
+  }
+
   // API Route - Get MR bookings
   app.get("/api/mr-bookings", (req, res) => {
     try {
@@ -39,7 +95,9 @@ async function startServer() {
         return res.json([]);
       }
       const data = fs.readFileSync(MR_DB_PATH, "utf-8");
-      res.json(JSON.parse(data || "[]"));
+      const rawBookings = JSON.parse(data || "[]");
+      const cleanedBookings = cleanAndRenewMrBookings(rawBookings, MR_DB_PATH, PAST_MR_DB_PATH);
+      res.json(cleanedBookings);
     } catch (e) {
       console.error("Error reading MR bookings:", e);
       res.status(500).json({ error: "Failed to read database" });
@@ -67,11 +125,15 @@ async function startServer() {
       if (!Array.isArray(newBookings)) {
         return res.status(400).json({ error: "Invalid booking payload" });
       }
-      if (newBookings.length > 15) {
-        return res.status(400).json({ error: "Booking capacity exceeded. Maximum is 15." });
+
+      // First filter out past bookings so capacity checks are only on active slots
+      const cleanedBookings = cleanAndRenewMrBookings(newBookings, MR_DB_PATH, PAST_MR_DB_PATH);
+
+      if (cleanedBookings.length > 15) {
+        return res.status(400).json({ error: "Booking capacity exceeded. Maximum is 15 active slots." });
       }
       
-      fs.writeFileSync(MR_DB_PATH, JSON.stringify(newBookings, null, 2), "utf-8");
+      fs.writeFileSync(MR_DB_PATH, JSON.stringify(cleanedBookings, null, 2), "utf-8");
 
       // Auto-populate past_mr_bookings.json with newly introduced bookings in history
       let pastBookings: any[] = [];
@@ -84,7 +146,7 @@ async function startServer() {
       }
 
       let historyChanged = false;
-      newBookings.forEach((booking) => {
+      cleanedBookings.forEach((booking) => {
         const alreadyExists = pastBookings.some((p) => p.code === booking.code);
         if (!alreadyExists) {
           pastBookings.push(booking);
@@ -96,7 +158,7 @@ async function startServer() {
         fs.writeFileSync(PAST_MR_DB_PATH, JSON.stringify(pastBookings, null, 2), "utf-8");
       }
 
-      res.json({ success: true, bookings: newBookings });
+      res.json({ success: true, bookings: cleanedBookings });
     } catch (e) {
       console.error("Error writing MR bookings:", e);
       res.status(500).json({ error: "Failed to save to database" });

@@ -48,10 +48,10 @@ export function Doctors() {
     },
     { 
       name: "Dr. Rameshwar Hajare", 
-      specialty: "Medicine & Critical Care Consultant", 
-      qualifications: "MBBS, DTCD, Consultant Physician & Intensivist",
+      specialty: "Chest Physician & Intensivist", 
+      qualifications: "MBBS (ACPM Medical College, Dhule), DTCD (Mumbai)",
       role: "Director",
-      description: "Consultant Physician and Intensivist specializing in respiratory medicine and critical care management.",
+      description: "Working as Chest Physician & Intensivist at Gajanan Hospital & CCC CSN since 2018. Former Senior Registrar (SR) at IIMSR Medical College, Badnapur.",
       availability: "Mon - Sat: 11:00 AM - 3:00 PM, 7:00 PM - 10:00 PM"
     },
   ];
