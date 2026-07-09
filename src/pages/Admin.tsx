@@ -50,7 +50,7 @@ const defaultPatients = [
     name: "Priya Patil",
     phone: "917028123456",
     email: "priya.p@outlook.com",
-    doctor: "Dr. Sachin Patil",
+    doctor: "Dr. Sachin Atmaram Patil",
     reason: "Knee Joint Pain Consultation",
     date: new Date(Date.now()).toISOString().split("T")[0], // Today
     time: "11:15 AM",
@@ -1165,7 +1165,7 @@ export function Admin() {
                           <option>Dr. Gitesh Dalvi</option>
                           <option>Dr. Vijay Walture</option>
                           <option>Dr. Sachin Suryawanshi</option>
-                          <option>Dr. Sachin Patil</option>
+                          <option>Dr. Sachin Atmaram Patil</option>
                           <option>Dr. Dilip Thombre</option>
                         </select>
                       </div>

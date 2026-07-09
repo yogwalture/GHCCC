@@ -83,10 +83,10 @@ export function Departments() {
       description: "Specialized treatment for musculoskeletal system disorders and injuries.",
       services: ["Fracture Management", "Joint Replacement", "Spine Surgery", "Sports Injuries"],
       advancedProcedures: [
-        { name: "Computer-Assisted Joint Replacement", specialist: "Dr. Sachin Patil" },
-        { name: "Complex Pelvic-Acetabular Surgery", specialist: "Dr. Sachin Patil" }
+        { name: "Computer-Assisted Joint Replacement", specialist: "Dr. Sachin Atmaram Patil" },
+        { name: "Complex Pelvic-Acetabular Surgery", specialist: "Dr. Sachin Atmaram Patil" }
       ],
-      leadDoctor: "Dr. Sachin Patil"
+      leadDoctor: "Dr. Sachin Atmaram Patil"
     },
     { 
       name: "Laparoscopy Surgery", 

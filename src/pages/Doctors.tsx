@@ -15,11 +15,11 @@ export function Doctors() {
 
   const directors = [
     { 
-      name: "Dr. Sachin Suryawanshi", 
-      specialty: "Medicine & Critical Care Consultant", 
-      qualifications: "MBBS, TDD, IDCCM (Pune), Member of ACC, Dip Diabetology",
+      name: "Dr. Sachin D. Suryawanshi", 
+      specialty: "Intervention Pulmonologist & Intensivist", 
+      qualifications: "MBBS (MIMSR MIT Medical College, Latur), IDCCM (KEM Hospital, Pune), TDD - Chest Physician (CPS Mumbai), Dip. in Diabetology (Boston University, USA)",
       role: "Director",
-      description: "Expert in Internal Medicine and Critical Care with over 15 years of experience. Specialized in managing complex medical emergencies and diabetes care.",
+      description: "Expert Intervention Pulmonologist & Intensivist. Extensive experience as Intensivist at KEM Hospital Pune & Jehangir Hospital Pune, and Senior Registrar at Bhabha Hospital Mumbai & MGM Medical College.",
       availability: "Mon - Sat: 10:00 AM - 2:00 PM, 6:00 PM - 9:00 PM"
     },
     { 
@@ -57,7 +57,7 @@ export function Doctors() {
   ];
 
   const consultantsList = [
-    { name: "Dr. Sachin Patil", specialty: "Orthopaedic", qualifications: "MBBS, D Ortho., Consultant Orthopaedic & Joint Replacement Surgeon" },
+    { name: "Dr. Sachin Atmaram Patil", specialty: "Orthopaedic", qualifications: "MBBS, D.Ortho, FCPS Ortho | Fellowship in Joint Replacement & Arthroscopy | Consultant Joint Replacement, Arthroscopy and Orthopaedic Surgeon | Exp: J.J Hospital (Mumbai - 3 Yrs), ESIC Andheri (3 Yrs), Unit Head - ESIS Aurangabad" },
     { name: "Dr. Govind Changule", specialty: "Maxillofacial Surgery", qualifications: "MDS, Member ISOI, Oral Maxillofacial Reconstructive Surgeon" },
     { name: "Dr. Jitendra Rathod", specialty: "ENT", qualifications: "MBBS, MS (ENT) Surgery" },
     { name: "Dr. Sharad Shelke", specialty: "ENT", qualifications: "MBBS, MS (ENT)" },
