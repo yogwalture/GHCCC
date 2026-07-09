@@ -39,10 +39,10 @@ export function Departments() {
       description: "Comprehensive care for adult diseases, focusing on prevention, diagnosis, and treatment.",
       services: ["Fever & Infections", "Chronic Disease Management", "Hypertension", "Preventive Health Checks"],
       advancedProcedures: [
-        { name: "Complex Multi-system Disease Management", specialist: "Dr. Sachin Suryawanshi" },
+        { name: "Complex Multi-system Disease Management", specialist: "Dr. Sachin D. Suryawanshi" },
         { name: "Advanced Geriatric Care", specialist: "Dr. Dilip Thombre" }
       ],
-      leadDoctor: "Dr. Sachin Suryawanshi, Dr. Dilip Thombre"
+      leadDoctor: "Dr. Sachin D. Suryawanshi, Dr. Dilip Thombre"
     },
     { 
       name: "General Surgery", 
@@ -72,10 +72,10 @@ export function Departments() {
       description: "24/7 intensive care for life-threatening illnesses and injuries.",
       services: ["24/7 ICU", "Ventilator Support", "Multi-organ Failure", "Trauma Care"],
       advancedProcedures: [
-        { name: "Advanced Hemodynamic Monitoring", specialist: "Dr. Vijay Walture" },
+        { name: "Advanced Hemodynamic Monitoring", specialist: "Dr. Vijay D. Walture" },
         { name: "Continuous Renal Replacement Therapy (CRRT)", specialist: "Dr. Gitesh Dalvi" }
       ],
-      leadDoctor: "Dr. Vijay Walture, Dr. Gitesh Dalvi"
+      leadDoctor: "Dr. Vijay D. Walture, Dr. Gitesh Dalvi"
     },
     { 
       name: "Orthopedic Surgery", 
@@ -139,10 +139,10 @@ export function Departments() {
       description: "Specialized care for the management and prevention of diabetes and its complications.",
       services: ["Type 1 & 2 Diabetes", "Diabetic Foot Care", "Insulin Therapy", "Dietary Counseling"],
       advancedProcedures: [
-        { name: "Continuous Glucose Monitoring (CGM)", specialist: "Dr. Sachin Suryawanshi" },
+        { name: "Continuous Glucose Monitoring (CGM)", specialist: "Dr. Sachin D. Suryawanshi" },
         { name: "Insulin Pump Therapy", specialist: "Dr. Dilip Thombre" }
       ],
-      leadDoctor: "Dr. Sachin Suryawanshi, Dr. Dilip Thombre"
+      leadDoctor: "Dr. Sachin D. Suryawanshi, Dr. Dilip Thombre"
     },
     { 
       name: "Psychiatry & Neuropsychiatry", 

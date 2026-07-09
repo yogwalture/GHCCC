@@ -64,7 +64,7 @@ const defaultPatients = [
     name: "Suresh Deshmukh",
     phone: "919422345678",
     email: "suresh.desh@gmail.com",
-    doctor: "Dr. Vijay Walture",
+    doctor: "Dr. Vijay D. Walture",
     reason: "Chronic Hypertension Check",
     date: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString().split("T")[0], // 2 days ago
     time: "12:00 PM",
@@ -1163,8 +1163,8 @@ export function Admin() {
                           className="w-full text-xs font-extrabold p-2.5 border border-gray-200 bg-white rounded-lg focus:ring-1 focus:ring-[#128C7E] focus:border-[#128C7E]"
                         >
                           <option>Dr. Gitesh Dalvi</option>
-                          <option>Dr. Vijay Walture</option>
-                          <option>Dr. Sachin Suryawanshi</option>
+                          <option>Dr. Vijay D. Walture</option>
+                          <option>Dr. Sachin D. Suryawanshi</option>
                           <option>Dr. Sachin Atmaram Patil</option>
                           <option>Dr. Dilip Thombre</option>
                         </select>

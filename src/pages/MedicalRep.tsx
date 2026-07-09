@@ -158,8 +158,8 @@ export function MedicalRep() {
 
   const mrDoctors = [
     { id: "dr-gitesh", name: "Dr. Gitesh Dalvi", desc: "Director - Medicine & Critical Care", schedule: "Tuesdays (1:30 PM to 2:00 PM)", timeSlot: "1:30 PM - 2:00 PM", callDay: "Tuesday" },
-    { id: "dr-vijay", name: "Dr. Vijay Walture", desc: "Director - Medicine & Critical Care", schedule: "Fridays (2:30 PM to 3:00 PM)", timeSlot: "2:30 PM - 3:00 PM", callDay: "Friday" },
-    { id: "dr-sachin-s", name: "Dr. Sachin Suryawanshi", desc: "Director - Medicine & Critical Care", schedule: "Fridays (3:00 PM to 3:30 PM)", timeSlot: "3:00 PM - 3:30 PM", callDay: "Friday" },
+    { id: "dr-vijay", name: "Dr. Vijay D. Walture", desc: "Director - Chest Physician & Intensivist", schedule: "Fridays (2:30 PM to 3:00 PM)", timeSlot: "2:30 PM - 3:00 PM", callDay: "Friday" },
+    { id: "dr-sachin-s", name: "Dr. Sachin D. Suryawanshi", desc: "Director - Intervention Pulmonologist & Intensivist", schedule: "Fridays (3:00 PM to 3:30 PM)", timeSlot: "3:00 PM - 3:30 PM", callDay: "Friday" },
     { id: "dr-sachin-patil", name: "Dr. Sachin Atmaram Patil", desc: "Consultant - Orthopaedic Department", schedule: "1st Thursday of Month (3:00 PM to 3:30 PM)", timeSlot: "3:00 PM - 3:30 PM", callDay: "1st Thursday" },
     { id: "dr-rahul-ruikar", name: "Dr. Rahul Ruikar", desc: "Consultant - Nephrology (Kidney Specialist)", schedule: "Mondays to Saturdays (5:00 PM to 7:00 PM)", timeSlot: "5:00 PM - 7:00 PM", callDay: "Prior Appointment" },
     { id: "dr-dilip", name: "Dr. Dilip Thombre", desc: "Director - Medicine & Critical Care", schedule: "Special permission only", timeSlot: "Special Request Slot", callDay: "Prior Appointment" },

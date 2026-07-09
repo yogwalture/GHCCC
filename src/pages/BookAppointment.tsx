@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "motion/react";
 
 const directors = [
   { id: "dr-gitesh", name: "Dr. Gitesh Dalvi", spec: "Physician Diabetologist & Intensivist" },
-  { id: "dr-vijay", name: "Dr. Vijay Walture", spec: "Physician Diabetologist & Intensivist" },
-  { id: "dr-sachin", name: "Dr. Sachin Suryawanshi", spec: "Physician Diabetologist & Intensivist" },
+  { id: "dr-vijay", name: "Dr. Vijay D. Walture", spec: "Chest Physician & Intensivist" },
+  { id: "dr-sachin", name: "Dr. Sachin D. Suryawanshi", spec: "Intervention Pulmonologist & Intensivist" },
   { id: "dr-sachin-patil", name: "Dr. Sachin Atmaram Patil", spec: "Consultant Joint Replacement, Arthroscopy & Orthopaedic Surgeon" },
   { id: "dr-rahul-ruikar", name: "Dr. Rahul Ruikar", spec: "Nephrology / Kidney Specialist (OPD 5:00 PM - 7:00 PM)" },
   { id: "dr-dilip", name: "Dr. Dilip Thombre", spec: "Physician Cardiologist, Diabetologist & Intensivist" },

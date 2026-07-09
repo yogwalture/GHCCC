@@ -23,11 +23,11 @@ export function Doctors() {
       availability: "Mon - Sat: 10:00 AM - 2:00 PM, 6:00 PM - 9:00 PM"
     },
     { 
-      name: "Dr. Vijay Walture", 
-      specialty: "Medicine & Critical Care Consultant", 
-      qualifications: "MBBS, TDD, D.Cardiology, Member of ACC",
+      name: "Dr. Vijay D. Walture", 
+      specialty: "Chest Physician & Intensivist", 
+      qualifications: "MBBS, DTCD (CPS Mumbai)",
       role: "Director",
-      description: "Specialist in Cardiology and Critical Care. Dedicated to providing advanced cardiac care and managing intensive care units.",
+      description: "Director - Gajanan Hospital and Critical Care Centre, Garkheda / Bajajnagar. Expert Chest Physician and Intensivist specialized in critical care and respiratory medicine.",
       availability: "Mon - Sat: 11:00 AM - 3:00 PM, 7:00 PM - 10:00 PM"
     },
     { 
